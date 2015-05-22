@@ -1,0 +1,62 @@
+.cc1_in
++- comment = "cc1_in"
++- entry = "cc1_input_file.i"
+    +- comment = the arguments passed to cc1_real
+
+.cc1_out
++- comment = "cc1_out"
++- entry = "cc1_input_file.i"
+    +- comment = the arguments passed to cc1_real
++- entry = "cc1_output_file.s"
+    +- comment = the output file name of cc1_real
+
+.as_in
++- comment = "as_in"
++- entry = "cc1_input_file.i"
+    +- comment = the arguments passed to cc1_real
++- entry = "as_input_file.s" // the "cc1_output_file.s" of .cc1_out
+    +- comment = the arguments passed to as_real
+
+.as_out
++- comment = "as_out"
++- entry = "cc1_input_file.i"
+    +- comment = the arguments passed to cc1_real
++- entry = "as_input_file.s" 
+    +- comment = the arguments passed to as_real
++- entry = "as_output_file.o"
+    +- comment = the output file name of as_real
+
+
+.ar_out
++- comment = "ar_out"
++- entry = "ar_input_argument.txt" // the arguments list passed to ld
++
++ \forall $o:*.o \in ar_input_argument.txt
+  +- entry = "$o.i" // the cc1_input_file.i of $o.as_out
+      +- comment = the arguments passed to cc1_real
+  +- entry = "$o.s" // the as_input_file.s of $o.as_out
+      +- comment = the arguments passed to as_real
+  +- entry = "$o"  // the as_output_file.o of $o.as_out
+
+
+.ld_out
++- comment = "ld_out"
++- entry = "ld_input_argument.txt" // the arguments list passed to ld
++
++ \forall $o:*.o \in ld_input_argument.txt
+  +- entry = "$o.i" // the cc1_input_file.i of $o.as_out
+      +- comment = the arguments passed to cc1_real
+  +- entry = "$o.s" // the as_input_file.s of $o.as_out
+      +- comment = the arguments passed to as_real
+  +- entry = "$o"  // the as_output_file.o of $o.as_out
++ \forall $a:*.a \in ld_input_argument.txt
+  
+
+
+bgrab -cc1  -> intercept the input/output of cc1
+bgrab -cc1plus -> intercept the input/output of cc1plus
+bgrab -as -> intercept the input/output of as
+bgrab -ar -> intercept the input/output of ar
+bgrab -ld -> intercept the input/output of ld
+bgrab -cleanup -> cleanup the files grabbed
+bgrab -script-gen <file> -> generate a build script from <file> which must be the output of bgrab -ld

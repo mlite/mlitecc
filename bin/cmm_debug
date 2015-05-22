@@ -1,0 +1,18 @@
+#!/bin/sh
+
+OCLIB=`ocamlc -where`  # TODO: check for $OCAMLLIB and $CAMLLIB
+SQLITE3_LIB=`ocamlfind query sqlite3`
+SRC_HOME=~/tmp/qc--20071215
+
+exec ocamldebug \
+       -I $SRC_HOME/src\
+       -I $SRC_HOME/rtl\
+       -I $SRC_HOME/lua\
+       -I $SRC_HOME/lua/std\
+       -I $SRC_HOME/gen\
+       -I $SRC_HOME/asdl\
+       -I $SRC_HOME/camlburg\
+       -I $SRC_HOME/cllib\
+       -I $SRC_HOME/lib\
+       -emacs\
+       $@

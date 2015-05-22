@@ -1,0 +1,7 @@
+depend: $(GENERATED)
+	-rm -f .depend
+	for d in $(DIRS); do \
+	  $(OCAMLDEP) $(CAMLIBS) $$d/*.ml $$d/*.mli; \
+	done > .depend
+
+include .depend

@@ -1,0 +1,98 @@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+RUNTEST = runtest
+prefix = /usr/local
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+RUNTESTFLAGS =
+FLAGS_TO_PASS =
+top_builddir = $(top_srcdir)/build/src
+builddir = $(top_builddir)/c_arithm
+B=$(builddir)/
+
+include $(top_srcdir)/Makefile.conf
+
+############################## User's variables and rules ##########################
+#
+# User defined parameters
+OCAML_PACKAGES = 
+OCAML_EXT_PACKAGES =  
+OCAML_REQUIRED_C_LIBS = -cclib -L./ -cclib -L@MLITE_BUILD_TOOL_HOME@/lib
+CAMLC_CMI_PATH = -I $(top_builddir)/utils -I $(top_builddir)/frontc \
+	-I $(top_builddir)/cmm -I $(top_builddir)/gcc_driver \
+	-I $(top_builddir)/c_arithm -I $(B)
+
+CAMLP4_LIBS = pa_macro.cmo $(top_builddir)/ml4/ml4lib.cma
+
+CAML_SRC_DIRS = .
+
+INCDIRS= @MLITE_BUILD_TOOL_HOME@/include
+
+LIBDIRS= @MLITE_BUILD_TOOL_HOME@/lib
+
+#EXTLIBDIRS=
+
+NOWEBS = c_arithm.noweb
+
+
+CLIBS = mpfr gmp
+# We turn on debugger support in all our modules for now.
+CFLAGS = -g -ccopt -static 
+OCAMLBCFLAGS = -g
+OCAMLBLDFLAGS = -g
+RESULT = c_arithm
+c_arithm_LIB = $(B)c_arithm
+
+c_arithm_LIB_NOWEBS = c_arithm.noweb
+c_arithm_LIB_SOURCES = $(c_arithm_LIB_NOWEBS:.noweb=.ml)\
+	$(c_arithm_LIB_NOWEBS:.noweb=.mli)\
+	c_arithm_impl.c\
+	ehead.h mconf.h econst.c ieee.c mtherr.c
+
+
+c_arithm_LIB_OBJS    += $(addprefix $(B),$(subst .mly,.cmo,$(filter %.mly, $(c_arithm_LIB_SOURCES))))
+c_arithm_LIB_OBJS    += $(addprefix $(B),$(subst .mll,.cmo,$(filter %.mll, $(c_arithm_LIB_SOURCES))))
+c_arithm_LIB_OBJS    += $(addprefix $(B),$(subst .mli,.cmi,$(filter %.mli, $(c_arithm_LIB_SOURCES))))
+c_arithm_LIB_OBJS    += $(addprefix $(B),$(subst .ml,.cmo,$(filter %.ml, $(c_arithm_LIB_SOURCES))))
+c_arithm_OPTLIB_OBJS  = $(c_arithm_LIB_OBJS:.cmo=.cmx)
+
+extra_CLEANUP = \
+	$(c_arithm_LIB).cma\
+	$(c_arithm_LIB).cmxa\
+	$(c_arithm_LIB_OBJS:.cmo=.cmi)\
+	$(c_arithm_LIB_OBJS:.cmo=.cmx)\
+	$(c_arithm_LIB_OBJS:.cmo=.annot)\
+	$(c_arithm_LIB_OBJS:.cmo=.o)\
+
+
+all: build_dir depend $(c_arithm_LIB)
+
+build_dir: $(shell if [ -d $(B) ]; then echo $(B); else mkdir $(B); fi)
+
+mrproper: clean
+	rm -f *~ *.cmi *.cmo *.top *.so *.ml a.noweb
+
+$(c_arithm_LIB): $(c_arithm_LIB_OBJS) $(c_arithm_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cma $(filter %.cmo, $(c_arithm_LIB_OBJS))
+
+	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cmxa $(filter %.cmx, $(c_arithm_OPTLIB_OBJS))
+
+
+.PHONY: mrproper
+.SUFFIXES: .noweb 
+
+c_arithm.ml: c_arithm.noweb c_arithm.m4
+	m4 -P c_arithm.noweb > a.noweb
+	notangle -Rc_arithm.ml a.noweb > c_arithm.ml
+	ocamlc -i c_arithm.ml > c_arithm.mli
+
+c_arithm_impl.c: c_arithm.noweb c_arithm.m4
+	m4 -P c_arithm.noweb > a.noweb
+	notangle -Rc_arithm_impl.c a.noweb > c_arithm_impl.c
+
+
+include $(top_srcdir)/Makefile.rule
+include .depend

@@ -1,0 +1,198 @@
+#*********************************************************************#
+#  Yet Another Points-to Analyzer                                     #
+#   Ning(Neal Wang), UCI                                              #
+#   Copyright 2005                                                    #
+#*********************************************************************#
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = $(top_srcdir)/build/src
+builddir = $(top_builddir)/utils
+B=$(builddir)/
+
+include $(top_srcdir)/Makefile.conf
+############################## User's variables and rules ##########################
+#
+# User defined parameters
+OCAML_PACKAGES = 
+OCAML_REQUIRED_C_LIBS = 
+CAMLC_CMI_PATH = -I $(B)
+CAMLP4_LIBS = pa_macro.cmo $(top_builddir)/ml4/ml4lib.cma
+
+
+# Directories containing the source files
+DIRS    = .
+
+CAMLIBS = $(DIRS)
+CAMLIBS := $(addprefix -I , $(CAMLIBS))
+
+# Source code 
+int_LIB = $(B)int
+int_LIB_SOURCES  =  opaque.mli\
+		    opaque.ml\
+		    int_t.ml\
+		    int_int.ml\
+		    int.ml\
+		    ustr_t.ml\
+		    ustr_str.ml\
+		    ustr.ml\
+		    int_printer.ml
+
+int_LIB_CMIS = $(addprefix $(B), $(subst .mli,.cmi,$(filter %.mli, $(int_LIB_SOURCES))))
+int_LIB_OBJS = $(addprefix $(B), $(subst .ml,.cmo, $(filter %.ml, $(int_LIB_SOURCES))))
+int_OPTLIB_OBJS  = $(int_LIB_OBJS:.cmo=.cmx)
+
+print_util_LIB = $(B)print_util
+print_util_LIB_SOURCES  = $(int_LIB_SOURCES)\
+                    mlite_config.ml\
+		    convert_c_int.ml\
+		    c_op.ml\
+		    safe_list.ml\
+		    mlite_printer.ml\
+		    debug_array.ml\
+                    str_util.mli\
+		    str_util.ml\
+		    finite_sequence.mli\
+		    finite_sequence.ml\
+		    random_prefix.ml\
+		    regSeq.ml\
+		    cpu.ml\
+		    ud_set_types.ml\
+		    ud_sets.ml\
+	            parser_handle.ml\
+	            parser_driver.ml\
+		    vcg.ml\
+		    coordinate.ml\
+		    hashmap.ml\
+		    collection.ml\
+                    gnode_array.ml\
+                    sta_proc_array.ml\
+		    vect.ml\
+		    log.ml\
+		    logrc_handle.ml\
+		    logrc_parser.mly\
+		    logrc_lexer.mll\
+	            logrc.ml\
+	            mapping.ml\
+		    exec.ml
+
+print_util_LIB_CMIS  = $(addprefix $(B), $(subst .mli,.cmi, $(filter %.mli, $(print_util_LIB_SOURCES))))
+print_util_LIB_OBJS0 = $(print_util_LIB_SOURCES:.mly=.ml)
+print_util_LIB_OBJS1 = $(print_util_LIB_OBJS0:.mll=.ml)
+print_util_LIB_OBJS2 = $(print_util_LIB_OBJS1:.ml=.cmo)
+print_util_LIB_OBJS  = $(addprefix $(B), $(filter-out %.mli, $(print_util_LIB_OBJS2)))
+print_util_OPTLIB_OBJS  = $(print_util_LIB_OBJS:.cmo=.cmx)
+
+#  util_LIB
+util_LIB = $(B)util
+util_LIB_SOURCES  = $(print_util_LIB_SOURCES)\
+		    reinit.ml\
+		    auxfuns.ml\
+		    debug.ml
+
+util_LIB_OBJS0  = $(util_LIB_SOURCES:.mly=.ml)
+util_LIB_OBJS1 += $(util_LIB_OBJS0:.mll=.ml)
+util_LIB_OBJS2 += $(util_LIB_OBJS1:.ml=.cmo)
+util_LIB_OBJS = $(addprefix $(B), $(filter-out %.mli, $(util_LIB_OBJS2)))
+util_OPTLIB_OBJS  = $(util_LIB_OBJS:.cmo=.cmx)
+
+local_LIBS = $(B)/util.cma 
+test_SOURCES = test0.ml
+test_OBJS = $(addprefix $(B), $(test_SOURCES:.ml=.cmo))
+test_EXE = test
+
+extra_CLEANUP = $(B)* $(test_EXE) 
+
+# Relues
+
+
+all:    mkbuilddir depend\
+	$(int_LIB)\
+	$(print_util_LIB)\
+	$(util_LIB)\
+	$(test_EXE)
+
+install: # do nothing
+	install ../asm/mlitecc_macro_op.h @prefix@/include
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+echo: 	
+	echo $(util_LIB_OBJS)
+	echo $(print_util_LIB_OBJS)
+
+extra_CLEANUP = $(int_LIB_OBJS)\
+	$(int_LIB_OBJS:.cmo=.cmi)\
+	$(int_LIB_OBJS:.cmo=.cmx)\
+	$(int_LIB_OBJS:.cmo=.annot)\
+	$(int_LIB_OBJS:.cmo=.o)\
+	$(print_util_LIB_OBJS)\
+	$(print_util_LIB_OBJS:.cmo=.cmi)\
+	$(print_util_LIB_OBJS:.cmo=.cmx)\
+	$(print_util_LIB_OBJS:.cmo=.annot)\
+	$(print_util_LIB_OBJS:.cmo=.o)\
+	$(util_LIB_OBJS)\
+	$(util_LIB_OBJS:.cmo=.cmi)\
+	$(util_LIB_OBJS:.cmo=.cmx)\
+	$(util_LIB_OBJS:.cmo=.annot)\
+	$(util_LIB_OBJS:.cmo=.o)\
+	$(int_LIB).cma\
+	$(int_LIB).cmxa\
+	$(int_LIB).a\
+	$(print_util_LIB).cma\
+	$(print_util_LIB).cmxa\
+	$(print_util_LIB).a\
+	$(util_LIB).cma\
+	$(util_LIB).cmxa\
+	$(util_LIB).a
+
+boot: CAMLIBS = -I $(CAMLDEFUNLIBS)/stdlib $(DEFUNLIBS)
+boot: $(uc_LIB_DFN_OBJS)
+
+$(int_LIB): $(int_LIB_CMIS) $(int_LIB_OBJS) $(int_OPTLIB_OBJS)
+	$(OCAMLC) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cma $(int_LIB_OBJS)
+	$(OCAMLOPT) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cmxa $(int_OPTLIB_OBJS)
+
+$(print_util_LIB): $(print_util_LIB_CMIS) $(print_util_LIB_OBJS) $(print_util_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cma $(print_util_LIB_OBJS)
+	$(OCAMLOPT) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cmxa $(print_util_OPTLIB_OBJS)
+
+$(util_LIB): $(util_LIB_OBJS) $(util_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cma $(util_LIB_OBJS)
+	$(OCAMLOPT) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cmxa $(util_OPTLIB_OBJS)
+
+$(test_EXE): $(test_OBJS) $(util_LIB)
+	$(OCAMLC) $(OCAML_PACKAGES) -linkpkg $(OCAML_CUSTOM) $(OCAML_CLFAGS)\
+	-o $@\
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_LIBS)\
+	$(test_OBJS)
+
+############################## End of User's variables ##########################
+include $(top_srcdir)/Makefile.rule
+# Depend
+########
+include $(top_srcdir)/Makefile.dep
+include .depend

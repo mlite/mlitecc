@@ -1,0 +1,302 @@
+#p*********************************************************************#
+#   Mlite C compiler                                                   #
+#   Ning Wang, www.mlite.org                                           #
+#   Copyright 2005,2006,2007,2008                                      #
+#**********************************************************************#
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+RUNTEST = runtest
+prefix = /usr/local
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+RUNTESTFLAGS =
+FLAGS_TO_PASS =
+top_builddir = $(top_srcdir)/build/src
+builddir = $(top_builddir)/cmm
+B=$(builddir)/
+
+include $(top_srcdir)/Makefile.conf
+############################## User's variables and rules ##########################
+#
+# User defined parameters
+OCAML_PACKAGES = -package unix -package str
+OCAML_EXT_PACKAGES =  
+OCAML_REQUIRED_C_LIBS = -ccopt -L$(top_srcdir)/src/cmm_utils
+CAMLC_CMI_PATH = -I $(top_builddir)/utils  -I $(top_srcdir)/src/cmm_utils -I $(B)  
+CAMLP4_LIBS = 
+
+CAML_SRC_DIRS = .
+
+# we have to remove -pp because some cmm code cannot pass preprocessing
+# but I havenot figure out why, so we just redefine the two flags here.
+OCAMLCFLAGS = -dtypes -g -ccopt "$(CFLAGS)" -warn-error DFLMPSUVX
+OCAMLOPTFLAGS = -ccopt "$(CFLAGS)" -p
+
+# The executable file to generate (default a.out under Unix)
+cmm_basic_LIB = $(B)cmm_basic
+cmm_basic_LIB_SOURCES =\
+	common.ml\
+	cmm_ast.ml\
+	cmm_ast_printer.ml\
+	scmm_ast.ml\
+	scmm_ast_printer.ml\
+	pp.mli\
+	pp.ml\
+	astpp.mli\
+	astpp.ml\
+	cmm_handle.ml\
+	cmm_parse.mly\
+	cmm_scan.mll\
+	cell.mli\
+	cell.ml\
+	symbol.mli\
+	symbol.ml\
+	register.mli\
+	register.ml\
+	rtl.mli\
+	rtl.ml\
+	reloc.mli\
+	reloc.ml\
+	types.mli\
+	types.ml\
+	strutil.mli\
+	strutil.ml\
+	rtlop.mli\
+	rtlop.ml\
+	cmm_debug.mli\
+	cmm_debug.ml\
+	rtlutil.mli\
+	rtlutil.ml\
+	avail.mli\
+	avail.ml\
+	varmap.mli\
+	varmap.ml\
+	property.mli\
+	property.ml\
+	unique.mli\
+	unique.ml\
+	spans.mli\
+	spans.ml\
+	ep.mli\
+	ep.ml\
+	dag.mli\
+	dag.ml\
+	mflow.mli\
+	mflow.ml\
+	idgen.mli\
+	idgen.ml\
+	zipcfg.mli\
+	zipcfg.ml\
+	dominator.mli\
+	dominator.ml\
+	tx.mli\
+	tx.ml\
+	dataflow.mli\
+	dataflow.ml\
+	eqn.mli\
+	eqn.ml\
+	rtleqn.mli\
+	rtleqn.ml\
+	space.mli\
+	space.ml\
+	alignment.mli\
+	alignment.ml\
+	simplify.mli\
+	simplify.ml\
+	vfp.mli\
+	vfp.ml\
+	block.mli\
+	block.ml\
+	memalloc.mli\
+	memalloc.ml\
+	automaton.mli\
+	automaton.ml\
+	float.mli\
+	float.ml\
+	metrics.mli\
+	metrics.ml\
+	asm.mli\
+	asm.ml\
+	fenv.mli\
+	fenv.ml\
+	nast.mli\
+	nast.ml\
+	elabexp.mli\
+	elabexp.ml\
+	elabstmt.mli\
+	elabstmt.ml\
+	topsort.mli\
+	topsort.ml\
+	nelab.mli\
+	nelab.ml\
+	box.mli\
+	box.ml\
+	target.mli\
+	target.ml\
+	talloc.mli\
+	talloc.ml\
+	automatongraph.mli\
+	automatongraph.ml\
+	call.mli\
+	call.ml\
+	proc.mli\
+	proc.ml\
+	preast2ir.mli\
+	preast2ir.ml\
+	context.mli\
+	context.ml\
+	postexpander.mli\
+	postexpander.ml\
+	rewrite.mli\
+	rewrite.ml\
+	contn.mli\
+	contn.ml\
+	idcode.mli\
+	idcode.ml\
+	ast2ir.mli\
+	optimize.mli\
+	optimize.ml\
+	ast2ir.ml\
+	mangle.mli\
+	mangle.ml\
+	astasm.mli\
+	astasm.ml\
+	cfgutil.mli\
+	cfgutil.ml\
+	opshape.mli\
+	opshape.ml\
+	expander.mli\
+	expander.ml\
+	dotasm.mli\
+	dotasm.ml\
+	ctypes.mli\
+	ctypes.ml\
+	runtimedata.mli\
+	runtimedata.ml\
+	interpemitrtl.mli\
+	interpemitrtl.ml\
+	interp.mli\
+	interp.ml\
+	interpemit.mli\
+	interpemit.ml\
+	interpasm.mli\
+	interpasm.ml
+
+cmm_basic_LIB_OBJS0  = $(cmm_basic_LIB_SOURCES:.mly=.ml)
+cmm_basic_LIB_OBJS1  = $(cmm_basic_LIB_OBJS0:.mll=.ml)
+cmm_basic_LIB_OBJS2  = $(cmm_basic_LIB_OBJS1:.mli=.cmi)
+cmm_basic_LIB_OBJS3  = $(cmm_basic_LIB_OBJS2:.ml=.cmo)
+cmm_basic_LIB_OBJS   = $(addprefix $(B),$(cmm_basic_LIB_OBJS3))
+
+cmm_basic_OPTLIB_OBJS  = $(cmm_basic_LIB_OBJS:.cmo=.cmx)
+
+cmm_basic_LIB_CMOS   += $(subst .cmo,.cmo,$(filter %.cmo, $(cmm_basic_LIB_OBJS)))
+
+cmm_basic_OPTLIB_CMOS  = $(cmm_basic_LIB_CMOS:.cmo=.cmx)
+
+
+
+# The executable file to generate (default a.out under Unix)
+local_LIBS =\
+        $(top_builddir)/utils/util.cma \
+        $(top_srcdir)/src/cmm_utils/cmm_utils.cma \
+        $(B)cmm_basic.cma
+
+local_OPTLIBS =\
+        $(top_builddir)/utils/util.cmxa \
+        $(top_srcdir)/src/cmm_utils/cmm_utils.cmxa \
+        $(B)cmm_basic.cmxa
+
+
+cmm_c_EXE = $(B)cmm_c
+cmm_c_SRC = cmm_main.ml
+cmm_c_OBJS = $(addprefix $(B), $(cmm_c_SRC:.ml=.cmo))
+
+cmm_c_OPTEXE_OBJS = $(addprefix $(B), $(cmm_c_SRC:.ml=.cmx))
+cmm_c_OPTEXE = cmm_c_opt
+
+extra_CLEANUP =\
+	$(cmm_c_OBJS)\
+        $(cmm_c_OBJS:.cmo=.cmi)\
+        $(cmm_c_OBJS:.cmo=.cmx)\
+        $(cmm_c_OBJS:.cmo=.annot)\
+        $(cmm_c_OBJS:.cmo=.o)\
+        $(cmm_c_OBJS)\
+        $(cmm_c_EXE)\
+        $(cmm_c_OPTEXE)\
+	$(cmm_basic_LIB).cma\
+	$(cmm_basic_LIB).cmxa\
+	$(cmm_basic_OPTLIB)\
+	$(cmm_basic_LIB_OBJS)\
+	$(cmm_basic_LIB_OBJS:.cmo=.cmi)\
+	$(cmm_basic_LIB_OBJS:.cmo=.cmx)\
+	$(cmm_basic_LIB_OBJS:.cmo=.annot)\
+	$(cmm_basic_LIB_OBJS:.cmo=.o)
+
+# Relues
+
+bootstrap: depend\
+	$(cmm_basic_LIB)\
+	all
+
+all:    mkbuilddir depend\
+	$(cmm_basic_LIB) $(cmm_c_EXE) 
+
+install: # do nothing
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+
+opt : $(OPTLIB) $(EXEC).opt
+
+echo: 
+	echo $(cmm_basic_LIB_OBJS)
+
+$(cmm_basic_LIB): $(cmm_basic_LIB_OBJS) $(cmm_basic_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cma $(cmm_basic_LIB_CMOS) 
+
+	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cmxa $(cmm_basic_OPTLIB_CMOS)
+
+$(cmm_c_EXE): $(cmm_basic_LIB) $(cmm_c_OBJS)
+	$(OCAMLC) $(OCAML_PACKAGES) -linkpkg $(OCAML_CUSTOM) $(OCAMLCFLAGS) \
+	-o $@ \
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_LIBS) \
+	$(cmm_c_OBJS)
+	cp $@ $(top_srcdir)/bin
+
+
+$(cmm_c_OPTEXE):  $(cmm_basic_LIB).cmxa $(cmm_c_OPTEXE_OBJS)
+	$(OCAMLOPT) $(OCAML_PACKAGES) -linkpkg $(OCAMLOPTFLAGS) \
+	-o $@ \
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_OPTLIBS) \
+	$(cmm_c_OPTEXE_OBJS) \
+	-cclib -lm \
+	-ccopt "$(CFLAGS)"
+	cp $@ $(top_srcdir)/bin
+
+
+############################## End of User's variables ##########################
+include $(top_srcdir)/Makefile.rule
+include .depend

@@ -1,0 +1,65 @@
+#*********************************************************************#
+#  Yet Another Points-to Analyzer                                     #
+#   Ning(Neal Wang), UCI                                              #
+#   Copyright 2005                                                    #
+#*********************************************************************#
+###################    Generic Command settings   #####################
+# System parameters
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+ocaml_bin=@MLITE_BUILD_TOOL_HOME@/bin
+
+INSTALL=@INSTALL@
+PATH=@MLITE_BUILD_TOOL_HOME@/bin:/bin:/usr/bin
+
+# C compiler parameters
+CC=@CC@
+CFLAGS=@CPPFLAGS@ @CFLAGS@ 
+C_LIBS=@LIBS@
+LDFLAGS=@LDFLAGS@
+
+YACC = @YACC@
+LEX = @LEX@ 
+
+# Ocaml compiler parameters
+OCAMLFIND = ocamlfind
+
+OCAMLC = $(OCAMLFIND) ocamlc 
+OCAML_CUSTOM = -custom
+
+OCAMLCFLAGS = -dtypes -g -ccopt "$(CFLAGS)" -pp 'camlp4o $(CAMLP4_LIBS) -loc loc' -warn-error DFLMPSUVX
+
+
+OCAMLOPT = $(OCAMLFIND) ocamlopt
+OCAMLOPTFLAGS = -ccopt "$(CFLAGS)" -pp 'camlp4o $(CAMLP4_LIBS) -loc loc' -p
+
+OCAMLDEP = $(OCAMLFIND) ocamldep
+
+OCAMLLEX = ocamllex
+OCAML_LFLAGS = 
+
+OCAMLYACC = ocamlyacc
+OCAML_YFLAGS = -v
+
+# -linkall: all users of built library must load all our modules;
+OCAMLMKLIB = ocamlmklib
+OCAMLMKLIBFLAGS= #-ldopt "$(LDFLAGS)" -linkall 
+
+# ocamldefun
+CAMLDEFUN = ocamldefun
+CAMLDEFUNFLAGS = -pp 'camlp4o $(CAMLP4_LIBS)'
+
+# depend-cmd
+DEPENDCMD = depend-cmd
+
+# The list of Caml libraries might be used by the program
+# packages
+#   unix:
+#   str:
+#   nums:
+#   threads:
+#   dbm:
+#   shell:
+#
+############ End of Generic Command settings  #####################

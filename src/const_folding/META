@@ -1,0 +1,7 @@
+# Specifications for the "const_folding" library:
+requires = ""
+description = "Const_folding"
+version = "1.0"
+browse_interfaces = " Const_folding "
+archive(byte) = "const_folding.cma"
+archive(native) = "const_folding.cmxa"

@@ -1,0 +1,69 @@
+(** mlite log/debug options **)
+let mlitecc_macro_op_h = "#include \"@prefix@/include/mlitecc_macro_op.h\""
+let enable_log = ref false
+let enable_Wtype = ref false
+let enable_werror = ref false
+let enable_warnall = ref false
+let enable_pedantic = ref false
+let enable_ast_debug = ref false
+let disable_stmt010_normalization = ref false
+let disable_type030_normalization = ref false
+let pp_print_keep_sizeof = ref true
+let pp_print_keep_alignof = ref true
+let enable_c_line_directive = ref false
+let enable_type_table_print = ref false
+let enable_ce_tbl_print = ref false
+let allow_undefined_symbols = ref false
+let enable_lexing_position = ref true
+let enable_cfrag_parsing_debug = ref false
+  
+let mlitecc_cmd_opts =
+  [
+    ("--disable-line-number", 
+    Arg.Unit (fun () -> enable_c_line_directive := false),
+   "disable line number in C file");
+
+    ("--enable-line-number", 
+    Arg.Unit (fun () -> enable_c_line_directive := true),
+   "enable line number in C file");
+
+    ("--debug-ast", 
+    Arg.Set enable_ast_debug,
+    "enable ast debugging");
+
+   ("--warnall", 
+    Arg.Set enable_warnall,
+    "Enable all warnings");
+
+   ("--enable-log",
+    Arg.Set enable_log,
+    "Enable logging");
+
+   ("--enable-te-log",
+   Arg.Set enable_type_table_print,
+   "print teid of each type entity into a file");
+   
+   ("--enable-ce-log",
+   Arg.Set enable_ce_tbl_print,
+   "print ceid of each closure entity into a file");
+ ]
+
+let is_enable_ast_debug () = 
+  !enable_ast_debug
+
+
+let enable_log_rc_debug = ref false
+let mlite_home = ref ""
+let mlite_log_rc = ref "log.rc"
+
+
+let _ =
+  begin
+    try
+      let _ = mlite_home := (Sys.getenv "MLITE_HOME")
+      in ()
+    with
+      Not_found ->
+        let _ = mlite_home := (Sys.getenv "HOME") ^ "/.mlitecc"
+        in ()
+  end

@@ -1,0 +1,97 @@
+#*********************************************************************#
+#  Yet Another Points-to Analyzer                                     #
+#   Ning(Neal Wang), UCI                                              #
+#   Copyright 2005                                                    #
+#*********************************************************************#
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = $(top_srcdir)/build/src
+builddir = $(top_builddir)/ml4
+B=$(builddir)/
+
+include $(top_srcdir)/Makefile.conf
+################## User's variables and rules #########################
+#
+# User defined parameters
+OCAML_PACKAGES = -package camlp4
+OCAML_REQUIRED_C_LIBS = 
+CAMLP4_LIBS = q_MLast.cmo pa_extend.cmo pa_macro.cmo
+
+# Directories containing the source files
+CAML_SRC_DIRS    = .
+CAMLIBS = $(CAML_SRC_DIRS)
+CAMLIBS := $(addprefix -I , $(CAMLIBS))
+
+# Source code
+user_LIBS  = $(top_builddir)/utils/util.cma
+
+ml4_LIB          = $(B)ml4lib
+
+ml4_LIB_SOURCES  = pa_iris.ml 
+
+ml4_LIB_OBJS     = $(addprefix $(B), $(ml4_LIB_SOURCES:.ml=.cmo))
+ml4_OPTLIB_OBJS  = $(ml4_LIB_OBJS:.cmo=.cmx)
+
+
+test_SOURCE = foo.ml
+test_OBJS = $(test_SOURCES:.ml=.cmo)
+test_EXE = foo
+
+
+extra_CLEANUP = $(ml4_LIB_OBJS)\
+	$(ml4_LIB_OBJS:.cmo=.o)\
+	$(ml4_LIB_OBJS:.cmo=.annot)\
+	$(ml4_LIB_OBJS:.cmo=.cmi)\
+	$(ml4_LIB_OBJS:.cmo=.cmx)\
+	$(ml4_LIB).cma \
+	$(ml4_LIB).cmxa \
+	$(ml4_LIB).a \
+	__tmp.ml
+
+# Rules
+all:    mkbuilddir\
+	$(ml4_LIB)\
+        $(ml4_OPTLIB)\
+	$(ml4typ_LIB)\
+        $(ml4typ_OPTLIB)
+
+install: # nothing to install
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+
+check: $(text_EXE)
+
+
+$(ml4_LIB): $(ml4_LIB_OBJS) $(ml4_OPTLIB_OBJS)
+	$(OCAMLC) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cma \
+	$(ml4_LIB_OBJS)
+
+	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cmxa \
+	$(ml4_OPTLIB_OBJS)
+
+$(test_EXE): $(test_OBJS)
+	$(OCAMLC) -pp 'camlp4o $(ml4_LIB).cma' -I +camplp4 -o $@  $(test_OBJS)
+
+###################### End of User's variables ##################
+include $(top_srcdir)/Makefile.rule
+include .depend
