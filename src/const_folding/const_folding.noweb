@@ -1,0 +1,1373 @@
+@
+m4_include(const_folding.m4)
+\section{LICENSE}
+MLite C Compiler -- Ning Wang <email@ningwang.org> 2006-2010
+   
+The name `Mlite C Compiler' belongs to us, but the code is available free for
+any use in any field of endeavor.  You may redistribute Mlite C Compiler in
+whole or in part.  We ask that, as a matter of courtesy, you acknowledge its
+source and include this LICENSE file.  You may modify Mlite C Compiler and
+create derived works, with which you may do as you like, but the result may not
+be called Mlite C Compiler without written consent.
+   
+The software is placed in the public domain.  It is not protected by copyright,
+and it is not protected by a ``copyleft'' agreement like the one used by the
+Free Software Foundation.
+
+<<const_folding.ml>>=
+(* generated from const_folding.noweb *)
+(* m4 -P const_folding.noweb > a.noweb *)
+(* notangle -Rconst_folding.ml a.noweb > c_arithm.ml *)
+
+(* integer functions *)
+type cbool
+and cchar
+and cuchar
+and cschar
+and cshort
+and cushort
+and cuint
+and cint
+and clong
+and culong
+and cllong
+and cullong
+and cfloat
+and cdouble
+and cldouble
+and cfloatx
+and cdoublex
+and cldoublex
+
+(* need to call register_deserialization before use unmarshal *)
+external register: unit -> unit = "CAML_register_cvalop"
+
+let _ = register ()
+
+CINT_FUN_ML_1(cint)
+INTEGER_FUN_ML_1(cbool)
+INTEGER_FUN_ML_1(cchar)
+INTEGER_FUN_ML_1(cuchar)
+INTEGER_FUN_ML_1(cschar)
+INTEGER_FUN_ML_1(cshort)
+INTEGER_FUN_ML_1(cushort)
+INTEGER_FUN_ML_1(cuint)
+INTEGER_FUN_ML_1(clong)
+INTEGER_FUN_ML_1(culong)
+INTEGER_FUN_ML_1(cllong)
+INTEGER_FUN_ML_1(cullong)
+external cint_to_int : cint -> int = "C_cint_to_int"
+
+(* floating point functions *)
+FLOAT_FUN_ML_1(cfloat)
+FLOAT_FUN_ML_1(cdouble)
+FLOAT_FUN_ML_1(cldouble)
+FLOAT_FUN_ML_1(cfloatx)
+FLOAT_FUN_ML_1(cdoublex)
+FLOAT_FUN_ML_1(cldoublex)
+
+(* type conversion functions *)
+T2T_FUN_ML
+
+type cval =
+  | CCHAR of cchar
+  | CSCHAR of cschar
+  | CUCHAR of cuchar
+  | CSHORT of cshort
+  | CUSHORT of cushort
+  | CINT of cint
+  | CUINT of cuint
+  | CLONG of clong
+  | CULONG of culong
+  | CLLONG of cllong
+  | CULLONG of cullong
+  | CFLOAT of cfloat
+  | CDOUBLE of cdouble
+  | CLDOUBLE of cldouble
+  | CFLOATX of cfloatx
+  | CDOUBLEX of cdoublex
+  | CLDOUBLEX of cldoublex
+  | CBOOL of cbool
+
+and cval_ext = cval * string * string option
+
+and bop = 
+    | ADD
+    | SUB
+    | MUL
+    | DIV
+    | SHL
+    | SHR
+    | MOD
+    | BXOR
+    | BAND
+    | BOR
+and uop = 
+    | NEG
+    | BNOT
+    | NOT
+and rel =
+    | EQ
+    | NE
+    | LT
+    | GT
+    | LE
+    | GE  
+
+let cbool_cval_of_string v = CBOOL (cbool_of_string (String.copy v))
+let cchar_cval_of_string v = CCHAR (cchar_of_string (String.copy v))
+let cschar_cval_of_string v = CSCHAR (cschar_of_string (String.copy v))
+let cuchar_cval_of_string v = CUCHAR (cuchar_of_string (String.copy v))
+let cshort_cval_of_string v = CSHORT (cshort_of_string (String.copy v))
+let cushort_cval_of_string v = CUSHORT (cushort_of_string (String.copy v))
+let cint_cval_of_string v = CINT (cint_of_string (String.copy v))
+let cuint_cval_of_string v = CUINT (cuint_of_string (String.copy v))
+let clong_cval_of_string v = CLONG (clong_of_string (String.copy v))
+let culong_cval_of_string v = CULONG (culong_of_string (String.copy v))
+let cllong_cval_of_string v = CLLONG (cllong_of_string (String.copy v))
+let cullong_cval_of_string v = CULLONG (cullong_of_string (String.copy v))
+let cfloat_cval_of_string v = CFLOAT (cfloat_of_string (String.copy v))
+let cdouble_cval_of_string v = CDOUBLE (cdouble_of_string (String.copy v))
+let cldouble_cval_of_string v = CLDOUBLE (cldouble_of_string (String.copy v))
+let cfloatx_cval_of_string v = CFLOATX (cfloatx_of_string (String.copy v))
+let cdoublex_cval_of_string v = CDOUBLEX (cdoublex_of_string (String.copy v))
+let cldoublex_cval_of_string v = CLDOUBLEX (cldoublex_of_string (String.copy v))
+
+
+let cval_ext_of_cval e = 
+    match e with
+| CBOOL v -> (e, string_of_cbool v, None)
+| CCHAR v -> (e, string_of_cchar v, None)
+| CSCHAR v -> (e, string_of_cschar v, None)
+| CUCHAR v -> (e, string_of_cuchar v, None)
+| CSHORT v -> (e, string_of_cshort v, None)
+| CUSHORT v -> (e, string_of_cushort v, None)
+| CINT v -> (e, string_of_cint v, None)
+| CUINT v -> (e, string_of_cuint v, Some "U")
+| CLONG v -> (e, string_of_clong v, Some "L")
+| CULONG v -> (e, string_of_culong v, Some "UL")
+| CLLONG v -> (e, string_of_cllong v, Some "LL")
+| CULLONG v -> (e, string_of_cullong v, Some "ULL")
+| CFLOAT v -> (e, string_of_cfloat v, Some "F")
+| CDOUBLE v -> (e, string_of_cdouble v, None)
+| CLDOUBLE v -> (e, string_of_cldouble v, Some "L")
+| CFLOATX v -> (e, string_of_cfloatx v, Some "F")
+| CDOUBLEX v -> (e, string_of_cdoublex v, None)
+| CLDOUBLEX v -> (e, string_of_cldoublex v, Some "L")
+
+
+m4_define(T2T_CVAL_4,
+`
+let cval_$1_to_$2 v = 
+    match v with
+    | $1 v -> $2 ($3_to_$4 v)
+    | _ -> assert false
+')
+
+m4_define(T2T_CVAL_2,
+`
+T2T_CVAL_4($1,CBOOL,$2,cbool)
+T2T_CVAL_4($1,CCHAR,$2,cchar)
+T2T_CVAL_4($1,CSCHAR,$2,cschar)
+T2T_CVAL_4($1,CUCHAR,$2,cuchar)
+T2T_CVAL_4($1,CSHORT,$2,cshort)
+T2T_CVAL_4($1,CUSHORT,$2,cushort)
+T2T_CVAL_4($1,CINT,$2,cint)
+T2T_CVAL_4($1,CUINT,$2,cuint)
+T2T_CVAL_4($1,CLONG,$2,clong)
+T2T_CVAL_4($1,CULONG,$2,culong)
+T2T_CVAL_4($1,CLLONG,$2,cllong)
+T2T_CVAL_4($1,CULLONG,$2,cullong)
+T2T_CVAL_4($1,CFLOAT,$2,cfloat)
+T2T_CVAL_4($1,CDOUBLE,$2,cdouble)
+T2T_CVAL_4($1,CLDOUBLE,$2,cldouble)
+T2T_CVAL_4($1,CFLOATX,$2,cfloatx)
+T2T_CVAL_4($1,CDOUBLEX,$2,cdoublex)
+T2T_CVAL_4($1,CLDOUBLEX,$2,cldoublex)
+')
+
+T2T_CVAL_2(CBOOL,cbool)
+T2T_CVAL_2(CCHAR,cchar)
+T2T_CVAL_2(CSCHAR,cschar)
+T2T_CVAL_2(CUCHAR,cuchar)
+T2T_CVAL_2(CSHORT,cshort)
+T2T_CVAL_2(CUSHORT,cushort)
+T2T_CVAL_2(CINT,cint)
+T2T_CVAL_2(CUINT,cuint)
+T2T_CVAL_2(CLONG,clong)
+T2T_CVAL_2(CULONG,culong)
+T2T_CVAL_2(CLLONG,cllong)
+T2T_CVAL_2(CULLONG,cullong)
+
+T2T_CVAL_2(CFLOAT,cfloat)
+T2T_CVAL_2(CDOUBLE,cdouble)
+T2T_CVAL_2(CLDOUBLE,cldouble)
+
+T2T_CVAL_2(CFLOATX,cfloatx)
+T2T_CVAL_2(CDOUBLEX,cdoublex)
+T2T_CVAL_2(CLDOUBLEX,cldoublex)
+
+
+
+let cval_to_CINT v =
+  match v with
+    | CBOOL _ -> cval_CBOOL_to_CINT v
+    | CCHAR _ -> cval_CCHAR_to_CINT v
+    | CSCHAR _ -> cval_CSCHAR_to_CINT v
+    | CUCHAR _ -> cval_CUCHAR_to_CINT v
+    | CSHORT _ -> cval_CSHORT_to_CINT v
+    | CUSHORT _ -> cval_CUSHORT_to_CINT v
+    | CINT _ -> v
+    | CUINT _ -> cval_CUINT_to_CINT v
+    | CLONG _ -> cval_CLONG_to_CINT v
+    | CULONG _ -> cval_CULONG_to_CINT v
+    | CLLONG _ -> cval_CLLONG_to_CINT v
+    | CULLONG _ -> cval_CULLONG_to_CINT v
+    | CFLOAT _ -> cval_CFLOAT_to_CINT v
+    | CDOUBLE _ -> cval_CDOUBLE_to_CINT v
+    | CLDOUBLE _ -> cval_CLDOUBLE_to_CINT v
+    | CFLOATX _ -> cval_CFLOATX_to_CINT v
+    | CDOUBLEX _ -> cval_CDOUBLEX_to_CINT v
+    | CLDOUBLEX _ -> cval_CLDOUBLEX_to_CINT v
+
+
+let cval_to_int v =
+    let v' = cval_to_CINT v
+    in
+    match v' with
+    | CINT i -> cint_to_int i
+    | _ -> assert false
+
+
+let converter v1 v2 = 
+  match v1 with
+    | CBOOL _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CBOOL v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CBOOL v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CBOOL v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CBOOL v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CBOOL v2)
+	    | CINT _ -> (cval_CBOOL_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CBOOL_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CBOOL_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CBOOL_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CBOOL_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CBOOL_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CBOOL_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CBOOL_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CBOOL_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CBOOL_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CBOOL_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CBOOL_to_CLDOUBLEX v1, v2)
+	end 
+	  
+    | CCHAR _  ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (cval_CCHAR_to_CBOOL v1, v2)
+	    | CCHAR _  -> (v1, v2)
+	    | CSCHAR _ -> (cval_CCHAR_to_CSCHAR v1, v2)
+	    | CUCHAR _ -> (cval_CCHAR_to_CUCHAR v1, v2)
+	    | CSHORT _ -> (cval_CCHAR_to_CSHORT v1, v2)
+	    | CUSHORT _ -> (cval_CCHAR_to_CUSHORT v1, v2)
+	    | CINT _ -> (cval_CCHAR_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CCHAR_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CCHAR_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CCHAR_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CCHAR_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CCHAR_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CCHAR_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CCHAR_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CCHAR_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CCHAR_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CCHAR_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CCHAR_to_CLDOUBLEX v1, v2)
+	end
+	  
+    | CSCHAR _ ->	
+	begin
+	  match v2 with
+	    | CBOOL _ -> (cval_CSCHAR_to_CBOOL v1, v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CSCHAR v2)
+	    | CSCHAR _ -> (v1, v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CSCHAR v2)
+	    | CSHORT _ -> (cval_CSCHAR_to_CSHORT v1, v2)
+	    | CUSHORT _ -> (cval_CSCHAR_to_CUSHORT v1, v2)
+	    | CINT _ -> (cval_CSCHAR_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CSCHAR_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CSCHAR_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CSCHAR_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CSCHAR_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CSCHAR_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CSCHAR_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CSCHAR_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CSCHAR_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CSCHAR_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CSCHAR_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CSCHAR_to_CLDOUBLEX v1, v2)
+	end
+	  
+    | CUCHAR _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (cval_CUCHAR_to_CBOOL v1, v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CUCHAR v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CUCHAR v2)
+	    | CUCHAR _ -> (v1, v2)
+	    | CSHORT _ -> (cval_CUCHAR_to_CSHORT v1, v2)
+	    | CUSHORT _ -> (cval_CUCHAR_to_CUSHORT v1, v2)
+	    | CINT _ -> (cval_CUCHAR_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CUCHAR_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CUCHAR_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CUCHAR_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CUCHAR_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CUCHAR_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUCHAR_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUCHAR_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUCHAR_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CUCHAR_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUCHAR_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUCHAR_to_CLDOUBLEX v1, v2)
+	end
+
+    | CSHORT _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (cval_CSHORT_to_CBOOL v1, v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CSHORT v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CSHORT v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CSHORT v2)
+	    | CSHORT _ -> (v1, v2)
+	    | CUSHORT _ -> (cval_CSHORT_to_CUSHORT v1, v2)
+	    | CINT _ -> (cval_CSHORT_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CSHORT_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CSHORT_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CSHORT_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CSHORT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CSHORT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CSHORT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CSHORT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CSHORT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CSHORT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CSHORT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CSHORT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CUSHORT _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (cval_CUSHORT_to_CBOOL v1, v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CUSHORT v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CUSHORT v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CUSHORT v2)
+	    | CSHORT _ -> (v1, v2)
+	    | CUSHORT _ -> (cval_CUSHORT_to_CUSHORT v1, v2)
+	    | CINT _ -> (cval_CUSHORT_to_CINT v1, v2)
+	    | CUINT _ -> (cval_CUSHORT_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CUSHORT_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CUSHORT_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CUSHORT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CUSHORT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUSHORT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUSHORT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUSHORT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CUSHORT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUSHORT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUSHORT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CINT _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CINT v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CINT v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CINT v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CINT v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CINT v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CINT v2)
+	    | CINT _ -> (v1, v2)
+	    | CUINT _ -> (cval_CINT_to_CUINT v1, v2)
+	    | CLONG _ -> (cval_CINT_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CINT_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CINT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CINT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CINT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CINT_to_CLDOUBLEX v1, v2)
+	end
+	  
+    | CUINT _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CUINT v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CUINT v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CUINT v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CUINT v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CUINT v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CUINT v2)
+	    | CINT _ -> (v1, cval_CINT_to_CUINT v2)
+	    | CUINT _ -> (v1, v2)
+	    | CLONG _ -> (cval_CUINT_to_CLONG v1, v2)
+	    | CULONG _ -> (cval_CUINT_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CUINT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CUINT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUINT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CUINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUINT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CLONG _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CLONG v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CLONG v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CLONG v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CLONG v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CLONG v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CLONG v2)
+	    | CINT _ -> (v1, cval_CINT_to_CLONG v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CLONG v2)
+	    | CLONG _ -> (v1, v2)
+	    | CULONG _ -> (cval_CUINT_to_CULONG v1, v2)
+	    | CLLONG _ -> (cval_CUINT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CUINT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUINT_to_CLDOUBLE v1, v2)
+	    | CFLOATX _ -> (cval_CUINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUINT_to_CLDOUBLEX v1, v2)
+	end
+	  
+    | CULONG _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CULONG v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CULONG v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CULONG v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CULONG v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CULONG v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CULONG v2)
+	    | CINT _ -> (v1, cval_CINT_to_CULONG v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CULONG v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CULONG v2)
+	    | CULONG _ -> (v1, v2)
+	    | CLLONG _ -> (cval_CUINT_to_CLLONG v1, v2)
+	    | CULLONG _ -> (cval_CUINT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUINT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CUINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUINT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CLLONG _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CLLONG v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CLLONG v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CLLONG v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CLLONG v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CLLONG v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CLLONG v2)
+	    | CINT _ -> (v1, cval_CINT_to_CLLONG v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CLLONG v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CLLONG v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CLLONG v2)
+	    | CLLONG _ -> (v1, v2)
+	    | CULLONG _ -> (cval_CUINT_to_CULLONG v1, v2)
+	    | CFLOAT _ -> (cval_CUINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUINT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CUINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUINT_to_CLDOUBLEX v1, v2)
+	end
+	  
+    | CULLONG _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CULLONG v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CULLONG v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CULLONG v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CULLONG v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CULLONG v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CULLONG v2)
+	    | CINT _ -> (v1, cval_CINT_to_CULLONG v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CULLONG v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CULLONG v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CULLONG v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CULLONG v2)
+	    | CULLONG _ -> (v1, v2)
+	    | CFLOAT _ -> (cval_CUINT_to_CFLOAT v1, v2)
+	    | CDOUBLE _ -> (cval_CUINT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CUINT_to_CLDOUBLE v1, v2)
+	    | CFLOATX _ -> (cval_CUINT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CUINT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CUINT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CFLOAT _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CFLOAT v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CFLOAT v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CFLOAT v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CFLOAT v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CFLOAT v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CFLOAT v2)
+	    | CINT _ -> (v1, cval_CINT_to_CFLOAT v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CFLOAT v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CFLOAT v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CFLOAT v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CFLOAT v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CFLOAT v2)
+	    | CFLOAT _ -> (v1, v2)
+	    | CDOUBLE _ -> (cval_CFLOAT_to_CDOUBLE v1, v2)
+	    | CLDOUBLE _ -> (cval_CFLOAT_to_CLDOUBLE v1, v2)
+            | CFLOATX _ -> (cval_CFLOAT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CFLOAT_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CFLOAT_to_CLDOUBLEX v1, v2)
+	end
+
+    | CDOUBLE _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CDOUBLE v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CDOUBLE v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CDOUBLE v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CDOUBLE v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CDOUBLE v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CDOUBLE v2)
+	    | CINT _ -> (v1, cval_CINT_to_CDOUBLE v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CDOUBLE v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CDOUBLE v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CDOUBLE v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CDOUBLE v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CDOUBLE v2)
+	    | CFLOAT _ -> (v1, cval_CFLOAT_to_CDOUBLE v2)
+	    | CDOUBLE _ -> (v1, v2)
+	    | CLDOUBLE _ -> (cval_CDOUBLE_to_CLDOUBLE v1, v2)
+	    | CFLOATX _ -> (cval_CFLOATX_to_CDOUBLEX v1, cval_CFLOATX_to_CDOUBLEX v2)
+	    | CDOUBLEX _ -> (cval_CDOUBLE_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CDOUBLE_to_CLDOUBLEX v1, v2)
+	end
+
+    | CLDOUBLE _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CLDOUBLE v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CLDOUBLE v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CLDOUBLE v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CLDOUBLE v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CLDOUBLE v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CLDOUBLE v2)
+	    | CINT _ -> (v1, cval_CINT_to_CLDOUBLE v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CLDOUBLE v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CLDOUBLE v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CLDOUBLE v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CLDOUBLE v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CLDOUBLE v2)
+	    | CFLOAT _ -> (v1, cval_CFLOAT_to_CLDOUBLE v2)
+	    | CDOUBLE _ -> (v1, cval_CDOUBLE_to_CLDOUBLE v2)
+	    | CLDOUBLE _ -> (v1, v2)
+            | CFLOATX _ -> (cval_CLDOUBLE_to_CLDOUBLEX v1, cval_CFLOAT_to_CLDOUBLEX v2)
+	    | CDOUBLEX _ -> (cval_CLDOUBLE_to_CLDOUBLEX v1, cval_CDOUBLEX_to_CLDOUBLEX v2)
+	    | CLDOUBLEX _ -> (cval_CLDOUBLE_to_CLDOUBLEX v1, v2)
+	end
+
+    | CFLOATX _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CFLOATX v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CFLOATX v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CFLOATX v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CFLOATX v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CFLOATX v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CFLOATX v2)
+	    | CINT _ -> (v1, cval_CINT_to_CFLOATX v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CFLOATX v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CFLOATX v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CFLOATX v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CFLOATX v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CFLOATX v2)
+	    | CFLOAT _ -> (v1, v2)
+	    | CDOUBLE _ -> (cval_CFLOATX_to_CDOUBLEX v1, cval_CDOUBLE_to_CDOUBLEX v2)
+	    | CLDOUBLE _ -> (cval_CFLOATX_to_CLDOUBLEX v1, cval_CLDOUBLE_to_CLDOUBLEX v2)
+            | CFLOATX _ -> (cval_CFLOAT_to_CFLOATX v1, v2)
+	    | CDOUBLEX _ -> (cval_CFLOATX_to_CDOUBLEX v1, v2)
+	    | CLDOUBLEX _ -> (cval_CFLOATX_to_CLDOUBLEX v1, v2)
+	end
+
+    | CDOUBLEX _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CDOUBLEX v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CDOUBLEX v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CDOUBLEX v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CDOUBLEX v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CDOUBLEX v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CDOUBLEX v2)
+	    | CINT _ -> (v1, cval_CINT_to_CDOUBLEX v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CDOUBLEX v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CDOUBLEX v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CDOUBLEX v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CDOUBLEX v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CDOUBLEX v2)
+	    | CFLOAT _ -> (v1, cval_CFLOAT_to_CDOUBLEX v2)
+	    | CDOUBLE _ -> (v1, cval_CDOUBLE_to_CDOUBLEX v2)
+	    | CLDOUBLE _ -> (cval_CDOUBLEX_to_CLDOUBLEX v1, cval_CLDOUBLE_to_CLDOUBLEX v2)
+	    | CFLOATX _ -> (cval_CFLOATX_to_CDOUBLEX v1, cval_CFLOATX_to_CDOUBLEX v2)
+	    | CDOUBLEX _ -> (v1, v2)
+	    | CLDOUBLEX _ -> (cval_CDOUBLEX_to_CLDOUBLEX v1, v2)
+	end
+
+    | CLDOUBLEX _ ->
+	begin
+	  match v2 with
+	    | CBOOL _ -> (v1, cval_CBOOL_to_CLDOUBLEX v2)
+	    | CCHAR _  -> (v1, cval_CCHAR_to_CLDOUBLEX v2)
+	    | CSCHAR _ -> (v1, cval_CSCHAR_to_CLDOUBLEX v2)
+	    | CUCHAR _ -> (v1, cval_CUCHAR_to_CLDOUBLEX v2)
+	    | CSHORT _ -> (v1, cval_CSHORT_to_CLDOUBLEX v2)
+	    | CUSHORT _ -> (v1, cval_CUSHORT_to_CLDOUBLEX v2)
+	    | CINT _ -> (v1, cval_CINT_to_CLDOUBLEX v2)
+	    | CUINT _ -> (v1, cval_CUINT_to_CLDOUBLEX v2)
+	    | CLONG _ -> (v1, cval_CLONG_to_CLDOUBLEX v2)
+	    | CULONG _ -> (v1, cval_CULONG_to_CLDOUBLEX v2)
+	    | CLLONG _ -> (v1, cval_CLLONG_to_CLDOUBLEX v2)
+	    | CULLONG _ -> (v1, cval_CULLONG_to_CLDOUBLEX v2)
+	    | CFLOAT _ -> (v1, cval_CFLOAT_to_CLDOUBLEX v2)
+	    | CDOUBLE _ -> (v1, cval_CDOUBLE_to_CLDOUBLEX v2)
+	    | CLDOUBLE _ -> (v1, cval_CLDOUBLE_to_CLDOUBLEX v2)
+            | CFLOATX _ -> (v1, cval_CFLOATX_to_CLDOUBLEX v2)
+	    | CDOUBLEX _ -> (v1, cval_CDOUBLEX_to_CLDOUBLEX v2)
+	    | CLDOUBLEX _ -> (v1, v2)
+	end
+
+    
+
+
+m4_dnl $1 = add
+m4_define(BIN_INT_BLOCK_1,
+`         match v1 with
+         | CCHAR v1 ->
+            begin
+                match v2 with
+                 | CCHAR v2 -> CCHAR ($1_cchar v1 v2)
+                 | _ -> assert false
+            end
+         | CSCHAR v1 ->
+            begin
+                   match v2 with
+                   | CSCHAR v2 -> CSCHAR ($1_cschar v1 v2)
+                   | _ -> assert false
+            end
+         | CUCHAR v1 ->
+            begin
+                   match v2 with
+                   | CUCHAR v2 -> CUCHAR ($1_cuchar v1 v2)
+                   | _ -> assert false
+            end
+         | CSHORT v1 ->
+            begin
+                   match v2 with
+                   | CSHORT v2 -> CSHORT ($1_cshort v1 v2)
+                   | _ -> assert false
+            end
+         | CUSHORT v1 ->
+            begin
+                   match v2 with
+                   | CUSHORT v2 -> CUSHORT ($1_cushort v1 v2)
+                   | _ -> assert false
+            end
+         | CINT v1 ->
+            begin
+                   match v2 with
+                   | CINT v2 -> CINT ($1_cint v1 v2)
+                   | _ -> assert false
+            end
+         | CUINT v1 ->
+            begin
+                   match v2 with
+                   | CUINT v2 -> CUINT ($1_cuint v1 v2)
+                   | _ -> assert false
+            end
+         | CLONG v1 ->
+            begin
+                   match v2 with
+                   | CLONG v2 -> CLONG ($1_clong v1 v2)
+                   | _ -> assert false
+            end
+         | CULONG v1 ->
+            begin
+                   match v2 with
+                   | CULONG v2 -> CULONG ($1_culong v1 v2)
+                   | _ -> assert false
+            end
+         | CLLONG v1 ->
+            begin
+                   match v2 with
+                   | CLLONG v2 -> CLLONG ($1_cllong v1 v2)
+                   | _ -> assert false
+            end
+         | CULLONG v1 ->
+            begin
+                   match v2 with
+                   | CULLONG v2 -> CULLONG ($1_cullong v1 v2)
+                   | _ -> assert false
+            end
+         | CBOOL v1 ->
+            begin
+                   match v2 with
+                   | CBOOL v2 -> CBOOL ($1_cbool v1 v2)
+                   | _ -> assert false
+            end
+')
+
+m4_define(BIN_FLOAT_BLOCK_1,
+`         | CFLOAT v1 ->
+            begin
+                   match v2 with
+                   | CFLOAT v2 -> CFLOAT ($1_cfloat v1 v2)
+                   | _ -> assert false
+            end
+         | CDOUBLE v1 ->
+            begin
+                   match v2 with
+                   | CDOUBLE v2 -> CDOUBLE ($1_cdouble v1 v2)
+                   | _ -> assert false
+            end
+         | CLDOUBLE v1 ->	
+            begin   
+                   match v2 with
+                   | CLDOUBLE v2 -> CLDOUBLE ($1_cldouble v1 v2)
+                   | _ -> assert false
+            end
+         | CFLOATX v1 ->
+            begin
+                   match v2 with
+                   | CFLOATX v2 -> CFLOATX ($1_cfloatx v1 v2)
+                   | _ -> assert false
+            end
+         | CDOUBLEX v1 ->
+            begin
+                   match v2 with
+                   | CDOUBLEX v2 -> CDOUBLEX ($1_cdoublex v1 v2)
+                   | _ -> assert false
+            end
+         | CLDOUBLEX v1 ->	
+            begin   
+                   match v2 with
+                   | CLDOUBLEX v2 -> CLDOUBLEX ($1_cldoublex v1 v2)
+                   | _ -> assert false
+            end
+')
+
+let bin_cval bop v1 v2 = 
+   let (v1, v2) = converter v1 v2
+   in
+   match bop with
+   | ADD -> 
+      begin
+        BIN_INT_BLOCK_1(add)
+        BIN_FLOAT_BLOCK_1(add)
+      end 
+   | SUB ->
+      begin
+        BIN_INT_BLOCK_1(sub)
+        BIN_FLOAT_BLOCK_1(sub)
+      end  
+   | MUL ->
+      begin
+        BIN_INT_BLOCK_1(mul)
+        BIN_FLOAT_BLOCK_1(mul)
+      end  
+   | DIV ->
+      begin
+        BIN_INT_BLOCK_1(div)
+        BIN_FLOAT_BLOCK_1(div)
+      end  
+   | MOD ->
+      begin
+        BIN_INT_BLOCK_1(mod)
+        | _ -> assert false
+      end  
+   | SHR ->
+      begin
+        BIN_INT_BLOCK_1(shr)
+        | _ -> assert false
+      end  
+   | SHL -> 
+      begin
+        BIN_INT_BLOCK_1(shl)
+        | _ -> assert false
+      end  
+   | BXOR ->
+      begin
+        BIN_INT_BLOCK_1(bxor)
+        | _ -> assert false
+      end  
+   | BAND ->
+      begin
+        BIN_INT_BLOCK_1(band)
+        | _ -> assert false
+      end  
+   | BOR ->
+      begin
+        BIN_INT_BLOCK_1(bor)
+        | _ -> assert false
+      end  
+
+
+let una_cval uop v =
+  match v with
+    | CBOOL v ->
+        begin
+	  match uop with
+            | NEG -> CBOOL (neg_cbool v)
+            | BNOT -> assert false
+            | NOT -> CINT (not_cbool v)
+        end
+    | CCHAR v ->
+	begin
+          match uop with
+            | NEG -> CCHAR (neg_cchar v)
+            | BNOT -> CCHAR (bnot_cchar v)
+            | NOT -> CINT (not_cchar v)
+        end
+    | CSCHAR v ->
+        begin
+	  match uop with
+            | NEG -> CSCHAR (neg_cschar v)
+            | BNOT -> CSCHAR (bnot_cschar v)
+            | NOT -> CINT (not_cschar v)
+        end
+    | CUCHAR v ->
+        begin
+	  match uop with
+            | NEG -> CUCHAR (neg_cuchar v)
+            | BNOT -> CUCHAR (bnot_cuchar v)
+            | NOT -> CINT (not_cuchar v)
+        end
+    | CSHORT v ->
+        begin
+	  match uop with
+            | NEG -> CSHORT (neg_cshort v)
+            | BNOT -> CSHORT (bnot_cshort v)
+            | NOT -> CINT (not_cshort v)
+        end
+    | CUSHORT v ->
+        begin
+	  match uop with
+            | NEG -> CUSHORT (neg_cushort v)
+            | BNOT -> CUSHORT (bnot_cushort v)
+            | NOT -> CINT (not_cushort v)
+        end
+    | CINT v ->
+        begin
+	  match uop with
+            | NEG -> CINT (neg_cint v)
+            | BNOT -> CINT (bnot_cint v)
+            | NOT -> CINT (bnot_cint v)
+        end
+    | CUINT v ->
+        begin
+	  match uop with
+            | NEG -> CUINT (neg_cuint v)
+            | BNOT -> CUINT (bnot_cuint v)
+            | NOT -> CINT (not_cuint v)
+        end
+    | CLONG v ->
+        begin
+	  match uop with
+            | NEG -> CLONG (neg_clong v)
+            | BNOT -> CLONG (bnot_clong v)
+            | NOT -> CINT (not_clong v)
+        end
+    | CULONG v ->
+        begin
+	  match uop with
+            | NEG -> CULONG (neg_culong v)
+            | BNOT -> CULONG (bnot_culong v)
+            | NOT -> CINT (not_culong v)
+        end
+    | CLLONG v ->
+        begin
+	  match uop with
+            | NEG -> CLLONG (neg_cllong v)
+            | BNOT -> CLLONG (bnot_cllong v)
+            | NOT -> CINT (not_cllong v)
+        end
+    | CULLONG v ->
+        begin
+	  match uop with
+            | NEG -> CULLONG (neg_cullong v)
+            | BNOT -> CULLONG (bnot_cullong v)
+            | NOT -> CINT (not_cullong v)
+        end
+
+    | CFLOAT v ->
+	begin
+	  match uop with
+            | NEG -> CFLOAT (neg_cfloat v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cfloat v)
+	end
+
+    | CDOUBLE v ->
+	begin
+	  match uop with
+            | NEG -> CDOUBLE (neg_cdouble v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cdouble v)
+	end
+    | CLDOUBLE v ->	
+	begin
+	  match uop with
+            | NEG -> CLDOUBLE (neg_cldouble v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cldouble v)
+	end
+    | CFLOATX v ->
+	begin
+	  match uop with
+            | NEG -> CFLOATX (neg_cfloatx v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cfloatx v)
+	end
+
+    | CDOUBLEX v ->
+	begin
+	  match uop with
+            | NEG -> CDOUBLEX (neg_cdoublex v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cdoublex v)
+	end
+    | CLDOUBLEX v ->	
+	begin
+	  match uop with
+            | NEG -> CLDOUBLEX (neg_cldoublex v)
+	    | BNOT -> assert false
+	    | NOT -> CINT (not_cldoublex v)
+	end
+
+
+let cval_and v1 v2 = 
+  match v1 with 
+  | CINT v1' -> 
+     begin
+       match v2 with
+       | CINT v2' -> CINT (and_cint v1' v2')
+       | _ -> assert false
+     end
+  | _ -> assert false
+
+let cval_or v1 v2 = 
+  match v1 with 
+  | CINT v1' -> 
+     begin
+       match v2 with
+       | CINT v2' -> CINT (or_cint v1' v2')
+       | _ -> assert false
+     end
+  | _ -> assert false
+
+
+
+m4_define(REL_BLOCK_1,
+`         match v1 with
+         | CCHAR v1 ->
+            begin
+                   match v2 with
+                   | CCHAR v2 -> CINT ($1_cchar v1 v2)
+                   | _ -> assert false
+            end
+         | CSCHAR v1 ->
+            begin
+                   match v2 with
+                   | CSCHAR v2 -> CINT ($1_cschar v1 v2)
+                   | _ -> assert false
+            end
+         | CUCHAR v1 ->
+            begin
+                   match v2 with
+                   | CUCHAR v2 -> CINT ($1_cuchar v1 v2)
+                   | _ -> assert false
+            end
+         | CSHORT v1 ->
+            begin
+                   match v2 with
+                   | CSHORT v2 -> CINT ($1_cshort v1 v2)
+                   | _ -> assert false
+            end
+         | CUSHORT v1 ->
+            begin
+                   match v2 with
+                   | CUSHORT v2 -> CINT ($1_cushort v1 v2)
+                   | _ -> assert false
+            end
+         | CINT v1 ->
+            begin
+                   match v2 with
+                   | CINT v2 -> CINT ($1_cint v1 v2)
+                   | _ -> assert false
+            end
+         | CUINT v1 ->
+            begin
+                   match v2 with
+                   | CUINT v2 -> CINT ($1_cuint v1 v2)
+                   | _ -> assert false
+            end
+         | CLONG v1 ->
+            begin
+                   match v2 with
+                   | CLONG v2 -> CINT ($1_clong v1 v2)
+                   | _ -> assert false
+            end
+         | CULONG v1 ->
+            begin
+                   match v2 with
+                   | CULONG v2 -> CINT ($1_culong v1 v2)
+                   | _ -> assert false
+            end
+         | CLLONG v1 ->
+            begin
+                   match v2 with
+                   | CLLONG v2 -> CINT ($1_cllong v1 v2)
+                   | _ -> assert false
+            end
+         | CULLONG v1 ->
+            begin
+                   match v2 with
+                   | CULLONG v2 -> CINT ($1_cullong v1 v2)
+                   | _ -> assert false
+            end
+         | CFLOAT v1 ->
+            begin
+                   match v2 with
+                   | CFLOAT v2 -> CINT ($1_cfloat v1 v2)
+                   | _ -> assert false
+            end
+         | CDOUBLE v1 ->
+            begin
+                   match v2 with
+                   | CDOUBLE v2 -> CINT ($1_cdouble v1 v2)
+                   | _ -> assert false
+            end
+         | CLDOUBLE v1 ->	
+            begin   
+                   match v2 with
+                   | CLDOUBLE v2 -> CINT ($1_cldouble v1 v2)
+                   | _ -> assert false
+            end
+         | CFLOATX v1 ->
+            begin
+                   match v2 with
+                   | CFLOATX v2 -> CINT ($1_cfloatx v1 v2)
+                   | _ -> assert false
+            end
+         | CDOUBLEX v1 ->
+            begin
+                   match v2 with
+                   | CDOUBLEX v2 -> CINT ($1_cdoublex v1 v2)
+                   | _ -> assert false
+            end
+         | CLDOUBLEX v1 ->	
+            begin   
+                   match v2 with
+                   | CLDOUBLEX v2 -> CINT ($1_cldoublex v1 v2)
+                   | _ -> assert false
+            end
+         | CBOOL _ -> assert false
+')
+
+let rel_cval bop v1 v2 = 
+   let (v1, v2) = converter v1 v2
+   in
+   match bop with
+   | EQ -> 
+     begin 
+       REL_BLOCK_1(eq) 
+     end
+   | NE -> 
+     begin 
+       REL_BLOCK_1(ne) 
+     end
+   | LT -> 
+     begin
+       REL_BLOCK_1(lt)
+     end
+   | GT -> 
+     begin 
+       REL_BLOCK_1(gt)
+     end
+   | LE -> 
+     begin 
+       REL_BLOCK_1(le)
+     end
+   | GE -> 
+     begin
+       REL_BLOCK_1(ge)
+     end
+
+external cint_is_true: cint -> bool = "C_cint_is_true"
+
+type cval_tag =
+  | Cbool
+  | Cchar
+  | Cschar
+  | Cuchar
+  | Cshort
+  | Cushort
+  | Cint
+  | Cuint
+  | Clong
+  | Culong
+  | Cllong
+  | Cullong
+  | Cfloat
+  | Cdouble
+  | Cldouble
+  | Cfloatx
+  | Cdoublex
+  | Cldoublex
+
+let cval_of_string str tag =
+  match tag with
+    | Cbool -> (cbool_cval_of_string str)
+    | Cchar -> (cchar_cval_of_string str)
+    | Cschar -> (cschar_cval_of_string str)
+    | Cuchar -> (cuchar_cval_of_string str)
+    | Cshort -> (cshort_cval_of_string str)
+    | Cushort -> (cushort_cval_of_string str)
+    | Cint -> (cint_cval_of_string str)
+    | Cuint -> (cuint_cval_of_string str)
+    | Clong -> (clong_cval_of_string str)
+    | Culong -> (culong_cval_of_string str)
+    | Cllong -> (cllong_cval_of_string str)
+    | Cullong -> (cullong_cval_of_string str)
+    | Cfloat -> (cfloat_cval_of_string str)
+    | Cdouble -> (cdouble_cval_of_string str)
+    | Cldouble -> (cldouble_cval_of_string str)
+    | Cfloatx -> (cfloatx_cval_of_string str)
+    | Cdoublex -> (cdoublex_cval_of_string str)
+    | Cldoublex -> (cldoublex_cval_of_string str)
+      
+let string_of_cval = function
+  | CBOOL v -> string_of_cbool v
+  | CCHAR v -> string_of_cchar v
+  | CSCHAR v -> string_of_cschar v
+  | CUCHAR v -> string_of_cuchar v
+  | CSHORT v -> string_of_cshort v
+  | CUSHORT v -> string_of_cushort v
+  | CINT v -> string_of_cint v
+  | CUINT v -> string_of_cuint v
+  | CLONG v -> string_of_clong v
+  | CULONG v -> string_of_culong v
+  | CLLONG v -> string_of_cllong v
+  | CULLONG v -> string_of_cullong v
+  | CFLOAT v -> string_of_cfloat v
+  | CDOUBLE v -> string_of_cdouble v
+  | CLDOUBLE v -> string_of_cldouble v
+  | CFLOATX v -> string_of_cfloatx v
+  | CDOUBLEX v -> string_of_cdoublex v
+  | CLDOUBLEX v -> string_of_cldoublex v
+
+
+let bsa_of_cval = function
+  | CBOOL v -> bsa_of_cbool v
+  | CCHAR v -> bsa_of_cchar v
+  | CSCHAR v -> bsa_of_cschar v
+  | CUCHAR v -> bsa_of_cuchar v
+  | CSHORT v -> bsa_of_cshort v
+  | CUSHORT v -> bsa_of_cushort v
+  | CINT v -> bsa_of_cint v
+  | CUINT v -> bsa_of_cuint v
+  | CLONG v -> bsa_of_clong v
+  | CULONG v -> bsa_of_culong v
+  | CLLONG v -> bsa_of_cllong v
+  | CULLONG v -> bsa_of_cullong v
+  | CFLOAT v -> bsa_of_cfloat v
+  | CDOUBLE v -> bsa_of_cdouble v
+  | CLDOUBLE v -> bsa_of_cldouble v
+  | CFLOATX v -> bsa_of_cfloatx v
+  | CDOUBLEX v -> bsa_of_cdoublex v
+  | CLDOUBLEX v -> bsa_of_cldoublex v
+@ 
+
+\noindent \ldots then I did the same in PHP.
+
+<<const_folding_impl.c>>=
+/* The "usual" OCaml includes */
+#include <caml/alloc.h>
+#include <caml/callback.h>
+#include <caml/fail.h>
+#include <caml/memory.h>
+#include <caml/misc.h>
+#include <caml/mlvalues.h>
+#include "ehead.h"
+#include <mpfr.h>
+#include <caml/custom.h>
+
+enum cval_tag
+  {
+    cbool_tag,
+    cchar_tag,
+    cschar_tag,
+    cuchar_tag,
+    cshort_tag,
+    cushort_tag,
+    cint_tag,
+    cuint_tag,
+    clong_tag,
+    culong_tag,
+    cllong_tag,
+    cullong_tag,
+    cfloat_tag,
+    cdouble_tag,
+    cldouble_tag,
+    cfloatx_tag,
+    cdoublex_tag,
+    cldoublex_tag,
+  };
+
+struct cval 
+{
+  int data[8];
+  enum cval_tag tag;
+};
+
+
+static void serialize (value v, uintnat * wsize_32, uintnat * wsize_64)
+{
+  caml_serialize_block_1 (Data_custom_val(v), sizeof(struct cval));
+  *wsize_32 = sizeof(struct cval);
+  *wsize_64 = sizeof(struct cval);
+}
+
+static uintnat * deserialize (void * dst)
+{
+  caml_deserialize_block_1 (dst, sizeof(struct cval));
+  return sizeof(struct cval);
+}
+
+
+
+static struct custom_operations cvalop = 
+  {    	
+    "cval",	
+    custom_finalize_default,
+    custom_compare_default,
+    custom_hash_default,
+    serialize,
+    deserialize
+  };
+
+
+void CAML_register_cvalop ()
+{
+   caml_register_custom_operations (&cvalop);
+}
+
+
+/* For debugging - we want to have access to printf, stderr and such */
+#include <stdio.h>
+#define FIELD(d,f)       ((struct cval *)Data_custom_val(d))->f
+#define STO(t, d)        (*((t *)FIELD(d,data)))
+#define SET_TAG(t, d)    FIELD(d,tag) = t##_tag
+#define MINUS_CHAR       '-'
+
+union cdata
+{
+   _Bool cbool;
+   char cchar;
+   signed char cschar;
+   unsigned char cuchar;
+   short cshort;
+   unsigned short cushort;
+   int cint;
+   unsigned int cuint;
+   long clong;
+   unsigned long culong;
+   long long cllong;
+   unsigned long long cullong;
+   float cfloat;
+   double cdouble;
+   long double cldouble;
+   float cfloatx;
+   double cdoublex;
+   long double cldoublex;
+   unsigned char bytes[256];
+} cdata;
+
+TYPEDEFS
+
+static char byte_string_array [256][10];
+
+static char buffer[1024];
+T2T_FUN_C
+
+/* integer functions */
+INTEGER_FUN_C_1(cbool)
+INTEGER_FUN_C_1(cchar)
+INTEGER_FUN_C_1(cuchar)
+INTEGER_FUN_C_1(cschar)
+INTEGER_FUN_C_1(cshort)
+INTEGER_FUN_C_1(cushort)
+CINT_FUN_C_1(cint)
+INTEGER_FUN_C_1(cuint)
+INTEGER_FUN_C_1(clong)
+INTEGER_FUN_C_1(culong)
+INTEGER_FUN_C_1(cllong)
+INTEGER_FUN_C_1(cullong)
+
+/* floating point functions */
+FLOAT_FUN_C_1(cfloat)
+FLOAT_FUN_C_1(cdouble)
+FLOAT_FUN_C_1(cldouble)
+
+FLOAT_FUN_C_1(cfloatx)
+FLOAT_FUN_C_1(cdoublex)
+FLOAT_FUN_C_1(cldoublex)
+
+/* string to value conversion functitons */
+S2V_FUN_C
+
+/* value to string conversion functions */
+V2S_FUN_C
+
+
+value C_cint_is_true (value v1) 
+{
+  int i = (cint) STO(cint, v1);
+  if (i) 
+    return Val_bool(1);
+  else
+    return Val_bool(0);
+}
+
+value C_cint_to_int (value v1) 
+{
+  int i = (cint) STO(cint, v1);
+  return Val_int(i);
+}  
+@
+
+\section{License}
+Later, same day some lawyer reminded me about licenses.
+So, here it is:
+
+<<license>>=
+This work is placed in the public domain.
+@

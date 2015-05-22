@@ -1,0 +1,25 @@
+type overflow = (Block.t list, Block.t list) Call.split_blocks
+    
+type ('automaton, 'cfg, 'cc, 'tgt) t = 
+    { symbol:         Symbol.t           (* of procedure *)
+    ; cc:             'cc                (* calling convention                   *)
+    ; target:         'tgt               (* target of this procedure             *)
+    ; formals:        (int * Cmm_ast.bare_formal) list (* formal args w/ indices)    *)
+    ; temps:          Talloc.Multiple.t  (* allocator for temporaries            *)
+    ; mk_symbol:      string -> Symbol.t (* allocator for symbols                *)
+    ; cfg:            'cfg               (* control-flow graph                   *)
+    ; oldblocks:      overflow           (* stack - incoming parms, outgoing results *)
+    ; youngblocks:    overflow           (* stack - outgoing parms, incoming results *)
+    ; stackd:         Block.t            (* stack - user stack data              *)
+    ; conts:          Block.t            (* pairs of pointers for conts *)
+    ; sp:             Block.t            (* the `standard' location of sp in body *)
+    ; priv:           'automaton         (* stack - spill slots etc - still open *)
+    ; eqns:           Rtleqn.t list      (* eqns for compile time consts *)
+    ; vars:           int                (* number of local vars + parameters *)
+    ; nvregs:         int                (* number of non-volatile registers *)
+    ; var_map:        Automaton.loc option array (* where variables are stored *)
+    ; global_map:     Automaton.loc array (* where global variables are stored *)
+    ; bodylbl:        Zipcfg.uid * string (* beginning of procedure body *)
+    ; headroom:       int                 (* size of the headroom *)
+    ; exp_of_lbl:     (Unique.uid * string) -> Rtl.exp (* exp of code label *)
+    } 

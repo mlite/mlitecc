@@ -1,0 +1,65 @@
+top_srcdir=@top_srcdir@
+B=$(top_srcdir)/build/src/const_folding
+OCAMLMAKEFILE=$(top_srcdir)/OCamlMakefile
+
+PACKS =
+
+LIBS = 
+
+OCAMLLIBPATH= 
+
+INCDIRS= @MLITE_BUILD_TOOL_HOME@/include
+
+LIBDIRS= @MLITE_BUILD_TOOL_HOME@/lib
+
+EXTLIBDIRS=
+
+
+CLIBS = mpfr gmp
+# We turn on debugger support in all our modules for now.
+CFLAGS = -g -ccopt -static 
+OCAMLBCFLAGS = -g
+OCAMLBLDFLAGS = -g
+RESULT = const_folding
+
+NOWEBS = const_folding.noweb
+SOURCES = const_folding.ml const_folding_impl.c ehead.h mconf.h econst.c ieee.c mtherr.c
+
+all: mkbuilddir $(SOURCES) byte-code-library native-code-library top
+install: # do nothing
+
+mrproper: clean
+	rm -f *~ *.cmi *.cmo *.top *.so *.ml a.noweb
+
+.PHONY: mkbuilddir
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+.PHONY: mrproper
+.SUFFIXES: .noweb 
+
+const_folding.ml: const_folding.noweb const_folding.m4
+	m4 -P const_folding.noweb > a.noweb
+	notangle -Rconst_folding.ml a.noweb > const_folding.ml
+	ocamlc -i const_folding.ml > const_folding.mli
+
+const_folding_impl.c: const_folding.noweb const_folding.m4
+	m4 -P const_folding.noweb > a.noweb
+	notangle -Rconst_folding_impl.c a.noweb > const_folding_impl.c
+
+
+include $(OCAMLMAKEFILE)

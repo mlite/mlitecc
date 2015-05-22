@@ -1,0 +1,24 @@
+#!/bin/sh
+OCLIB=`ocamlc -where`  # TODO: check for $OCAMLLIB and $CAMLLIB
+TOP_SRCDIR=@mlite_top_srcdir@
+
+export LD_PRELOAD=$TOP_SRCDIR/src/const_folding/dllconst_folding_stubs.so:$LD_PRELOAD
+
+exec ocamldebug \
+       -I $TOP_SRCDIR/build/src/ml4\
+       -I $TOP_SRCDIR/build/src/const_folding\
+       -I $TOP_SRCDIR/build/src/c2cmm\
+       -I $TOP_SRCDIR/build/src/cmm\
+       -I $TOP_SRCDIR/build/src/cmm_utils\
+       -I $TOP_SRCDIR/build/src/frontc\
+       -I $TOP_SRCDIR/build/src/utils\
+       -I $TOP_SRCDIR/src/ml4\
+       -I $TOP_SRCDIR/src/const_folding\
+       -I $TOP_SRCDIR/src/c2cmm\
+       -I $TOP_SRCDIR/src/cmm\
+       -I $TOP_SRCDIR/src/cmm_utils\
+       -I $TOP_SRCDIR/src/frontc\
+       -I $TOP_SRCDIR/src/utils\
+       -I $TOP_SRCDIR/src/ml4\
+       -emacs\
+       $@

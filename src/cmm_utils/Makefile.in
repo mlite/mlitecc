@@ -1,0 +1,76 @@
+OCAMLMAKEFILE = ../../OCamlMakefile
+
+PACKS =
+
+LIBS = 
+
+OCAMLLIBPATH=
+
+INCDIRS=
+
+LIBDIRS=
+
+EXTLIBDIRS=
+
+# We turn on debugger support in all our modules for now.
+CFLAGS = -g
+OCAMLBCFLAGS = -g
+OCAMLBLDFLAGS = -g
+RESULT = cmm_utils
+
+#NOWEBS = srcmap.nw uint64.nw bits.nw error.nw
+SOURCES = common.ml srcmap.mli srcmap.ml uint64.ml uint64p.c error.ml error.mli impossible.mli impossible.ml unsupported.mli unsupported.ml bits.mli bits.ml
+
+all: mkbuilddir $(SOURCES) byte-code-library native-code-library top
+install: # do nothing
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+mrproper: clean
+	rm -f *~ *.cmi *.cmo *.top *.so *.ml a.nw
+
+.PHONY: mrproper
+.SUFFIXES: .noweb 
+
+#uint64.ml: uint64.nw
+#	notangle -Ruint64.ml uint64.nw >$@
+
+#uint64p.c: uint64.nw
+#	notangle -Ruint64p.c uint64.nw >$@
+
+#srcmap.mli: srcmap.nw
+#	notangle -Rsrcmap.mli srcmap.nw >$@
+
+#srcmap.ml: srcmap.nw
+#	notangle -Rsrcmap.ml srcmap.nw >$@
+
+#error.mli: error.nw
+#	notangle -Rerror.mli error.nw >$@
+
+#error.ml: error.nw
+#	notangle -Rerror.ml error.nw >$@
+
+#bits.ml: bits.nw
+#	notangle -Rbits.ml bits.nw >$@
+
+#bits.mli: bits.nw
+#	notangle -Rbits.mli bits.nw >$@
+
+include $(OCAMLMAKEFILE)

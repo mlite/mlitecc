@@ -1,0 +1,115 @@
+#*********************************************************************#
+#  CIL C Parser                                                       #
+#*********************************************************************#
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+top_builddir = $(top_srcdir)/build/src
+builddir=$(top_builddir)/frontc
+B=$(builddir)/
+
+include $(top_srcdir)/Makefile.conf
+############################## User's variables and rules ##########################
+#
+# User defined parameters
+OCAML_PACKAGES = -package unix 
+OCAML_REQUIRED_C_LIBS = 
+CAMLC_CMI_PATH = -I $(builddir)/
+CAMLP4_LIBS = 
+
+
+# Source code 
+frontc_LIB = $(B)frontc
+frontc_LIB_SOURCES =\
+	pretty.mli\
+	pretty.ml\
+	errormsg.mli\
+	errormsg.ml\
+	longarray.mli\
+	longarray.ml\
+	growArray.mli\
+	growArray.ml\
+	cabs.ml\
+	cabshelper.ml\
+	cabs_printer.ml\
+	trace.mli\
+	trace.ml\
+	cabsvisit.mli\
+	cabsvisit.ml\
+	escape.mli\
+	escape.ml\
+	whitetrack.mli\
+	whitetrack.ml\
+	cprint.ml\
+	patch.mli\
+	patch.ml\
+	lexerhack.ml\
+	cparser.mly\
+	machdep.ml\
+	clexer.mll\
+	frontc.mli\
+	frontc.ml
+
+frontc_LIB_OBJS0 = $(frontc_LIB_SOURCES:.mll=.ml)
+frontc_LIB_OBJS1 = $(frontc_LIB_OBJS0:.mly=.ml)
+frontc_LIB_OBJS2 = $(frontc_LIB_OBJS1:.mli=.cmi)
+frontc_LIB_OBJS3 = $(frontc_LIB_OBJS2:.ml=.cmo)
+frontc_LIB_OBJS  = $(addprefix $(B), $(frontc_LIB_OBJS3))
+frontc_LIB_CMOS  = $(filter-out %.cmi, $(frontc_LIB_OBJS))
+frontc_OPTLIB_CMXS = $(frontc_LIB_CMOS:.cmo=.cmx)
+
+# The executable file to generate (default a.out under Unix)
+local_LIBS =  
+local_OPTLIBS = 
+
+extra_CLEANUP =\
+	$(frontc_LIB).cma\
+	$(frontc_LIB).cmxa\
+	cparser.ml\
+	cparser.output\
+	clexer.ml\
+	$(frontc_LIB_OBJS)\
+	$(frontc_LIB_OBJS:.cmo=.cmi)\
+	$(frontc_LIB_OBJS:.cmo=.cmx)\
+	$(frontc_LIB_OBJS:.cmo=.annot)\
+	$(frontc_LIB_OBJS:.cmo=.o)\
+# Relues
+
+
+all: mkbuilddir depend $(frontc_LIB) $(frontc_OPTLIB) 
+install: # do nothing
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+echo:  
+	echo $(extra_CLEANUP)
+	echo $(frontc_LIB_SOURCES)
+	echo $(frontc_LIB_OBJS)
+
+
+$(frontc_LIB): $(frontc_LIB_OBJS) $(frontc_OPTLIB_CMXS) 
+	$(OCAMLC) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cma $(frontc_LIB_CMOS)
+
+	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS)\
+	-a -o $@.cmxa $(frontc_OPTLIB_CMXS)
+
+############################## End of User's variables ##########################
+include $(top_srcdir)/Makefile.rule
+include .depend

@@ -1,0 +1,9 @@
+environment parameters:
+MLITE_BGRAB_CAPTURE = true | false
+GNU_AS_REAL = the absolute path of as command
+GNU_CC1_REAL = the absolute path of cc1 command
+GNU_CC1PLUS_REAL = the absolute path of cc1plus command
+GNU_LD_REAL = the absolute path of ld command
+GNU_AR_REAL = the absolute path of ar command
+
+MLITE_BGRAB_DEBUG = true | false

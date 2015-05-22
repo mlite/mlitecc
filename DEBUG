@@ -1,0 +1,11 @@
+load customer printer to camldebug
+
+load_printer nums.cma
+load_printer str.cma
+load_printer util.cma
+load_printer cmm_utils.cma
+load_printer const_folding.cma
+load_printer cmm_basic.cma
+load_printer mlite_cc_basic.cma
+install_printer  Tent_c_printer.print_c_type_only
+install_printer  Cent_c_printer.print_ce

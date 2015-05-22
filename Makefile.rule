@@ -1,0 +1,79 @@
+##############################################################
+################ This part should be generic
+################ Nothing to set up or fix here
+##############################################################
+distclean: clean
+clean:
+	rm -f *.cm[iox] *.annot *.o *~ .*~ #*# *.cma *.a *.vcg
+	rm -f *.cma *.a *.cmxa 
+	rm -f $(extra_CLEANUP)
+
+depend:
+	$(OCAMLDEP) *.mli *.ml > .depend
+
+.SUFFIXES:
+.SUFFIXES: .mlp4 .ml .mli .cmo .cmi .cmx .mll .mly .cmd .y .l .c .o .so\
+	   .fig .mp .mmp .eps .pdf .m4
+
+.m4.ml: 
+	m4 -P $< > $@
+
+$(B)%.o: %.c
+	$(OCAMLOPT) -c -ccopt "-fPIC $(CFLAGS) -I $(INCLUDE) $(C_MACRO)" -o $@ $<
+
+$(B)%.so: %.c
+	$(CC) -fPIC -shared -o $@ $<
+
+$(B)%.c: %.y
+	$(YACC) $(YACC_FLAGS) -o $@ $<
+
+$(B)%.c: %.l
+	$(LEX) $(LEX_FLAGS) -t  $< > $@
+
+$(B)%.cmo: %.ml
+	$(OCAMLC) $(OCAML_PACKAGES) $(CAMLC_CMI_PATH) $(OCAMLCFLAGS) -o $@ -c $<
+
+$(B)%.cmi: %.mli
+	$(OCAMLC) $(OCAML_PACKAGES) $(CAMLC_CMI_PATH) $(OCAMLCFLAGS) -o $@ -c $<
+
+$(B)%.cmx: %.ml
+	$(OCAMLOPT) $(OCAML_PACKAGES) $(OCAMLOPTFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $<
+
+$(B)%.cmo: %.mll
+	cp $< $(B)
+	$(OCAMLLEX) $(B)$<
+	$(OCAMLC) $(OCAML_PACKAGES) $(OCAMLCFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.ml
+
+$(B)%.cmx: %.mll
+	cp $< $(B)
+	$(OCAMLLEX) $(B)$<
+	$(OCAMLOPT) $(OCAML_PACKAGES) $(OCAMLOPTFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.ml
+
+$(B)%.cmo: %.mly
+	cp $< $(B)
+	$(OCAMLYACC) $(B)$<
+	$(OCAMLC) $(OCAML_PACKAGES) $(OCAMLCFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.mli
+	$(OCAMLC) $(OCAML_PACKAGES) $(OCAMLCFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.ml
+
+$(B)%.cmx: %.mly
+	cp $< $(B)
+	$(OCAMLYACC) $(B)$<
+	$(OCAMLOPT) $(OCAML_PACKAGES) $(OCAMLOPTFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.mli
+	$(OCAMLOPT) $(OCAML_PACKAGES) $(OCAMLOPTFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.ml
+
+$(B)%.cmi: %.mly
+	cp $< $(B)
+	$(OCAMLYACC) $(B)$<
+	$(OCAMLC) $(OCAML_PACKAGES) $(OCAMLCFLAGS) $(CAMLC_CMI_PATH) -o $@ -c $(B)$*.mli
+
+.fig.mp:
+	fig2dev -L mp $< $@
+
+.fig.mmp:
+	fig2dev -L mmp $< $@
+
+.fig.eps:
+	fig2dev -L eps $< $@
+
+.eps.pdf:
+	epstopdf $<

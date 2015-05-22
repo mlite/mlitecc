@@ -1,0 +1,56 @@
+                        The Mlite C Compiler
+
+This directory contains the source code for Mlite C Compiler.  It is written in
+Ocaml and C. It borrows the C Parser from CIL and does its own C construct
+simplification. Unlike CIL, it uses a sequence of small step translations to
+simplify C construct. Each step of translation can be tested by using gcc to
+compile the emitted C code. There are 12 translation steps. Each translation
+results in a simpler AST. The ASTs are named as Ast_xx_yyyy. Where xx are two
+alphabatic characters and yyyy describes what construct is simplified in this
+AST.
+
+Ast_aa_gram is the initial syntax tree constructed from Cabs of CIL. The AST is
+close to the grammar of C99 specification with some GCC extension.
+
+Ast_ba_stmt is the syntax tree in which the "for" statement is simplified.
+
+Ast_ca_expr is the syntax tree in which the "c_expression" non-terminal in C99
+specification is simplificed.
+
+Ast_da_type is the syntax tree in which declaration and declarator are combined
+such that each declaration only declare on identifier. Type declaration and
+object declarations are seperated, e.g., struct type0 { ... } v0, v1 [] = ...;"
+is translated to "struct type0 {...}; struct typ0 v0; struct type0 v1 [] = ...."
+
+In the implementation, Identifier in the C programming language which denotes
+data or code is a closure entity. Identifer representing a build-in type, or a
+typedef type is a type entity.
+
+Ast_ea_expr is the syntax tree in which all identifiers are tokenized as either
+Closure entity or Type entity and expression are further simplified. If an
+identifier represents an enumeration constant, a variable or a function, it is
+tokenized as a closure entity and represented as one entry in
+Cent.ml. Otherwise, the identifier denotes a type, it is tokenized as a Type
+entity and represented as one entry in Tent.ml. The storage size of a type is
+also computed.
+
+Ast_eb_expr is the syntax tree in which all arithmatic operations and type
+convertions are augmented with the storage sizes.
+
+Ast_ec_expr converts Local_obj_decl_init to Obj_decl_init
+
+Ast_fa_stmt is the syntax tree in which high level control constructs are
+simplified as GOTO or JMP. Nested and paired BEGIN_DECL and END_DECL are
+inserted for variable declarations to keep their local scopes.
+
+Ast_ga_code is the syntax tree in which all instructions are stored in an code
+array, and the target labels of GOTO or JMP are tokenized as indices in the code
+array.
+
+Ast_ha_graf is the syntax tree in which control flow graph is explicitly
+reprsented and dominance relation is computed.
+
+Ast_ia_init is the syntax tree in which static or dynamic variable
+initialization are simplified.
+
+Cmm_ast is the syntax tree of C--.

@@ -1,0 +1,327 @@
+#**********************************************************************#
+#   Mlite C compiler                                                   #
+#   Ning Wang, email@ningwang.org                                      #
+#   Copyright 2005,2006,2007,2008                                      #
+#**********************************************************************#
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+RUNTEST = runtest
+prefix = /usr/local
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+RUNTESTFLAGS =
+FLAGS_TO_PASS =
+top_builddir = $(top_srcdir)/build/src
+builddir = $(top_builddir)/c2cmm
+B=$(builddir)/
+installdir = @prefix@/bin
+
+include $(top_srcdir)/Makefile.conf
+############################## User's variables and rules ##########################
+#
+# User defined parameters
+OCAML_PACKAGES = -package unix -package dynlink -package num -package str
+OCAML_EXT_PACKAGES =  
+OCAML_REQUIRED_C_LIBS = -cclib -L./ -cclib -L$(top_srcdir)/src/const_folding
+CAMLC_CMI_PATH = -I $(top_builddir)/utils -I $(top_builddir)/frontc \
+	-I $(top_builddir)/cmm -I $(top_srcdir)/src/const_folding -I $(B)
+
+CAMLP4_LIBS = pa_macro.cmo $(top_builddir)/ml4/ml4lib.cma
+
+CAML_SRC_DIRS = .
+
+# The executable file to generate (default a.out under Unix)
+gen_mach_EXE = $(B)gen_mach
+gen_mach_SRC = gen_mach.c
+gen_mach_OBJS = $(subst .c,.o, $(gen_mach_SRC))
+
+# Source code 
+M4FILES = converter.m4
+
+# this lib can be load into ocamldebug for pretty printing
+mlite_cc_basic_LIB = $(B)mlite_cc_basic
+mlite_cc_basic_LIB_SOURCES =\
+	sort_ranges.ml\
+	qual_name.ml\
+	qual_name_printer.ml\
+	csize.ml\
+	typ_ast.ml\
+	vcg_printer.ml\
+	pretty_printer.ml\
+	c_str.ml\
+	c_syntax_symbol.ml\
+	c_syntax_symbol_printer.ml\
+	c_semantics_symbol.ml\
+	c_semantics_symbol_printer.ml\
+	config_mach.ml\
+	mach.ml\
+	tent.ml\
+	tent_printer.ml\
+	tent_c_printer.ml\
+	cent.ml\
+	cent_printer.ml\
+	cent_c_printer.ml\
+	senv.ml\
+	typ_mem.ml\
+	typ_mem_printer.ml\
+	code_label.ml\
+	ast_aa_gram.ml\
+	ast_aa_gram_printer.ml\
+	call_graph.ml\
+	call_graph_printer.ml\
+	ast_ba_stmt.ml\
+	ast_ba_stmt_printer.ml\
+	ast_ca_expr.ml\
+	ast_ca_expr_printer.ml\
+	ast_da_type.ml\
+	ast_da_type_printer.ml\
+	ast_da_type_cproto.ml\
+	ast_ea_expr.ml\
+	ast_ea_expr_printer.ml\
+	ast_eb_expr.ml\
+	ast_eb_expr_printer.ml\
+	ast_ec_expr.ml\
+	ast_ec_expr_printer.ml\
+	ast_fa_stmt.ml\
+	ast_fa_stmt_printer.ml\
+	ast_ga_code.ml\
+	ast_ga_code_printer.ml\
+	ast_ha_graf.ml\
+	ast_ha_graf_printer.ml\
+	ast_ha_graf_vcg_printer.ml\
+	ast_ia_init.ml\
+	ast_ia_init_printer.ml\
+	c_file_basic.ml\
+	c_builtin_type.ml\
+	$(M4FILES:.m4=.ml)
+
+mlite_cc_basic_LIB_OBJS    += $(addprefix $(B),$(subst .mly,.cmo,$(filter %.mly, $(mlite_cc_basic_LIB_SOURCES))))
+mlite_cc_basic_LIB_OBJS    += $(addprefix $(B),$(subst .mll,.cmo,$(filter %.mll, $(mlite_cc_basic_LIB_SOURCES))))
+mlite_cc_basic_LIB_OBJS    += $(addprefix $(B),$(subst .ml,.cmo,$(filter %.ml, $(mlite_cc_basic_LIB_SOURCES))))
+mlite_cc_basic_OPTLIB_OBJS  = $(mlite_cc_basic_LIB_OBJS:.cmo=.cmx)
+
+#
+mlite_cc_LIB = $(B)mlite_cc
+mlite_cc_LIB_SOURCES =\
+	qual_name_op.ml\
+	typ_handle.mly\
+	typ_parser.mly\
+	typ_lexer.mll\
+	trans_phase.ml\
+	mlitecc_files.ml\
+	ast_aa_gram_op.ml\
+	c_syntax_symbol_op.ml\
+	typ_op_debug.ml\
+	tent_op.ml\
+	cent_op.ml\
+	senv_op.ml\
+	typ_db_log.ml\
+	c89_std_fun.ml\
+	c90_std_fun.ml\
+	c94_std_fun.ml\
+	c99_std_fun.ml\
+	gnu_builtin.ml\
+	config_builtin.ml\
+	uni_typ_db.ml\
+	uni_ce_tbl.ml\
+	typ_mem_op.ml\
+	c99ize_cabs.ml\
+	gen_call_graph.ml\
+	ast_aa_gram_to_call_graph.ml\
+	gen_ast_ba_stmt.ml\
+	norm_ast_ba_stmt.ml\
+	gen_ast_ca_expr.ml\
+	gen_ast_da_type.ml\
+	norm_ast_da_type.ml\
+	ast_ea_expr_env.ml\
+	ast_ea_expr_op.ml\
+	gen_ast_ea_expr.ml\
+	norm_ast_ea_expr.ml\
+	ast_eb_expr_op.ml\
+	gen_ast_eb_expr.ml\
+	gen_ast_ec_expr.ml\
+	gen_ast_fa_stmt.ml\
+	gen_ast_ga_code.ml\
+	gen_ast_ha_graf.ml\
+	lnk_ast_ha_graf.ml\
+	gen_ast_ia_init.ml\
+	gen_cmm_ast.ml\
+	fronc_wrapper.ml\
+	insert_fields\
+	ast_aa_gram_generator.ml\
+	ast_ba_stmt_generator.ml\
+	ast_ca_expr_generator.ml\
+	ast_da_type_generator.ml\
+	ast_ea_expr_generator.ml\
+	ast_eb_expr_generator.ml\
+	ast_ec_expr_generator.ml\
+	ast_fa_stmt_generator.ml\
+	ast_ga_code_generator.ml\
+	ast_ha_graf_generator.ml\
+	ast_ia_init_generator.ml\
+	translator.ml\
+	ast_translation.ml
+
+mlite_cc_LIB_OBJS    += $(addprefix $(B),$(subst .mly,.cmo,$(filter %.mly, $(mlite_cc_LIB_SOURCES))))
+mlite_cc_LIB_OBJS    += $(addprefix $(B),$(subst .mll,.cmo,$(filter %.mll, $(mlite_cc_LIB_SOURCES))))
+mlite_cc_LIB_OBJS    += $(addprefix $(B),$(subst .ml,.cmo,$(filter %.ml, $(mlite_cc_LIB_SOURCES))))
+mlite_cc_OPTLIB_OBJS  = $(mlite_cc_LIB_OBJS:.cmo=.cmx)
+
+
+# The executable file to generate (default a.out under Unix)
+local_LIBS =\
+	$(top_builddir)/utils/util.cma \
+	$(top_builddir)/frontc/frontc.cma \
+	$(top_builddir)/cmm/cmm_basic.cma \
+	$(top_srcdir)/src/const_folding/const_folding.cma \
+	$(B)mlite_cc_basic.cma\
+	$(B)mlite_cc.cma
+
+local_OPTLIBS =\
+	$(top_builddir)/utils/util.cmxa \
+	$(top_builddir)/frontc/frontc.cmxa \
+	$(top_builddir)/cmm/cmm_basic.cmxa \
+	$(top_srcdir)/src/const_folding/const_folding.cmxa \
+	$(B)mlite_cc_basic.cmxa\
+	$(B)mlite_cc.cmxa
+
+mlitecc1_EXE = $(B)mlitecc1
+mlitecc1_SRC = mlitecc1_main.ml
+mlitecc1_OBJS = $(addprefix $(B), $(mlitecc1_SRC:.ml=.cmo))
+
+# mlitecc
+mlitecc_EXE = $(B)mlitecc
+mlitecc_SRC = mlitecc_main.ml
+mlitecc_OBJS = $(addprefix $(B), $(mlitecc_SRC:.ml=.cmo))
+
+mlitecc_OPTEXE_OBJS = $(addprefix $(B), $(mlitecc_SRC:.ml=.cmx))
+mlitecc_OPTEXE = $(B)mlitecc_opt
+
+extra_CLEANUP =\
+	$(gen_mach_EXE)\
+	$(mlitecc1_OBJS)\
+	$(mlitecc1_OBJS:.cmo=.cmi)\
+	$(mlitecc1_OBJS:.cmo=.cmx)\
+	$(mlitecc1_OBJS:.cmo=.annot)\
+	$(mlitecc1_OBJS:.cmo=.o)\
+	$(mlitecc1_EXE)\
+	$(mlitecc_EXE)\
+	$(mlitecc_OPTEXE)\
+	$(mlite_cc_LIB).cma\
+	$(mlite_cc_LIB).cmxa\
+	$(mlite_cc_LIB_OBJS)\
+	$(mlite_cc_LIB_OBJS:.cmo=.cmi)\
+	$(mlite_cc_LIB_OBJS:.cmo=.cmx)\
+	$(mlite_cc_LIB_OBJS:.cmo=.annot)\
+	$(mlite_cc_LIB_OBJS:.cmo=.o)\
+	$(mlite_cc_basic_LIB).cma\
+	$(mlite_cc_basic_LIB).cmxa\
+	$(mlite_cc_basic_OPTLIB)\
+	$(mlite_cc_basic_LIB_OBJS)\
+	$(mlite_cc_basic_LIB_OBJS:.cmo=.cmi)\
+	$(mlite_cc_basic_LIB_OBJS:.cmo=.cmx)\
+	$(mlite_cc_basic_LIB_OBJS:.cmo=.annot)\
+	$(mlite_cc_basic_LIB_OBJS:.cmo=.o)\
+
+# Relues
+
+bootstrap: mkbuilddir $(gen_mach_EXE)\
+	depend\
+	$(mlite_cc_basic_LIB) $(mlite_cc_basic_OPTLIB)\
+	all
+
+all:    mkbuilddir $(gen_mach_EXE) depend\
+	$(mlite_cc_basic_LIB) $(mlite_cc_basic_OPTLIB)\
+	$(mlite_cc_LIB) $(mlite_cc_OPTLIB)\
+	$(mlitecc1_EXE) \
+	$(mlitecc_EXE) 
+
+install:
+	install $(mlitecc1_EXE) $(installdir)
+	install $(mlitecc_EXE) $(installdir)
+
+
+.PHONY: mkbuilddir
+
+mkbuilddir:
+	$(shell if [ -d $(top_srcdir)/build ]; then \
+		  if [ -d $(top_srcdir)/build/src ]; then \
+		    if [ ! -d $(B) ]; then          \
+		       mkdir $(B);                  \
+		    fi                              \
+		  else                              \
+		    mkdir $(top_srcdir)/build/src;  \
+		    mkdir $(B);                     \
+		  fi                                \
+		else                                \
+		  mkdir $(top_srcdir)/build;        \
+		  mkdir $(top_srcdir)/build/src;    \
+		  mkdir $(B);                       \
+	        fi                                  \
+	)
+
+
+opt : $(OPTLIB) $(EXEC).opt
+
+cleanall: 
+	rm -f $(B)*
+
+echo: 
+	echo $(mlite_cc_basic_OPTLIB_OBJS)
+
+$(mlite_cc_basic_LIB): $(mlite_cc_basic_LIB_OBJS) $(mlite_cc_basic_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cma $(mlite_cc_basic_LIB_OBJS) 
+
+	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cmxa $(mlite_cc_basic_OPTLIB_OBJS)
+
+$(mlite_cc_LIB): $(mlite_cc_basic_LIB_OBJS) $(mlite_cc_LIB_CMI) $(mlite_cc_LIB_OBJS) $(mlite_cc_OPTLIB_OBJS) 
+	$(OCAMLC) $(OCAML_EXT_PACKAGES) $(OCAMLCFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cma $(mlite_cc_LIB_OBJS) 
+
+	$(OCAMLOPT) $(OCAML_EXT_PACKAGES) $(OCAMLOPTFLAGS) $(OCAML_REQUIRED_C_LIBS) \
+	-a -o $@.cmxa $(mlite_cc_OPTLIB_OBJS)
+
+
+# GEN_MACH
+$(gen_mach_EXE): $(gen_mach_OBJS) 
+	$(CC) -D_GNUCC -o $@ $(gen_mach_OBJS)
+	$(gen_mach_EXE)
+
+
+# MLITECC1
+$(mlitecc1_EXE): $(mlite_cc_basic_LIB_OBJS) $(mlite_cc_LIB_OBJS) $(mlitecc1_OBJS)
+	$(OCAMLC) $(OCAML_PACKAGES) -linkpkg $(OCAML_CUSTOM) $(OCAMLCFLAGS) \
+	-o $@ \
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_LIBS) \
+	$(mlitecc1_OBJS)
+
+
+# MLITECC
+$(mlitecc_EXE): $(mlitecc_OBJS) 
+	$(OCAMLC) $(OCAML_PACKAGES) -linkpkg $(OCAML_CUSTOM) $(OCAMLCFLAGS) \
+	-o $@ \
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_LIBS) \
+	$(mlitecc_OBJS)
+
+
+$(mlitecc_OPTEXE):  $(mlite_cc_LIB).cmxa $(mlitecc_OPTEXE_OBJS)
+	$(OCAMLOPT) $(OCAML_PACKAGES) -linkpkg $(OCAMLOPTFLAGS) \
+	-o $@ \
+	$(OCAML_REQUIRED_C_LIBS) \
+	$(local_OPTLIBS) \
+	$(mlite_cc_LIB).cmxa \
+	$(mlitecc_OPTEXE_OBJS) \
+	-cclib -lm \
+	-ccopt "$(CFLAGS)"
+
+
+############################## End of User's variables ##########################
+include $(top_srcdir)/Makefile.rule
+.SUFFIXES: .tbl .ml
+
+include .depend

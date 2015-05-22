@@ -1,0 +1,27 @@
+All the dependent packages are included in the release for users convenience.
+The dependent packages will be installed to /usr/local, you need to have the
+permission to install code in /usr/local directory.  
+
+The release only supports 32-bit linux.
+
+1. Run command "sh ../tools/install.sh /usr/local", 
+it will install all dependent packages to /usr/local directory. It is not
+recommanded to install dependent packages into a directory other than /usr/local
+in this release.  
+
+2. ./configure 
+
+4. make 
+
+5. make install 
+
+6. now you can use mlitecc like gcc to compile your C code. please send bugs at email@ningwang.org
+
+
+7. compile helloworld.c
+
+#include<stdio.h>
+int main () {
+   printf ("hello world\n");
+   return 0;
+}
